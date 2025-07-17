@@ -1,0 +1,308 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, SafeAreaView, FlatList } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useRouter } from 'expo-router';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { X, Calendar, Clock, MapPin, Users, User, Search, ChevronDown, ChevronRight } from 'lucide-react-native';
+import { MeetingCard } from '@/components/MeetingCard';
+import FilterBar from '@/components/FilterBar';
+import { ConnectionCard } from '@/components/ConnectionCard';
+import { useAuth } from '@/contexts/AuthContext';
+import { useConnections } from '@/contexts/ConnectionsContext';
+import { dataService } from '@/services/dataService';
+import { Meeting, Connection } from '@/types';
+import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+export default function MeetingsScreen() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { connections, toggleFavorite } = useConnections();
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [filteredMeetings, setFilteredMeetings] = useState<Meeting[]>([]);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showPast, setShowPast] = useState(true);
+  const [showToday, setShowToday] = useState(true);
+  const [showUpcoming, setShowUpcoming] = useState(true);
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    loadMeetings();
+  }, [user]);
+
+  useEffect(() => {
+    filterAndSearchMeetings();
+  }, [meetings, selectedType, searchQuery]);
+
+  const loadMeetings = () => {
+    const companyUID = user?.role === 'User' ? user.companyUID : undefined;
+    const meetingData = dataService.getMeetings(companyUID);
+    setMeetings(meetingData);
+  };
+
+  const filterAndSearchMeetings = () => {
+    let filtered = meetings;
+    
+    // Apply type filter
+    if (selectedType) {
+      filtered = dataService.filterByType(filtered, selectedType);
+    }
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(meeting =>
+        meeting.title.toLowerCase().includes(query) ||
+        meeting.description.toLowerCase().includes(query) ||
+        meeting.type.toLowerCase().includes(query) ||
+        meeting.location.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredMeetings(filtered);
+  };
+
+  const handleMeetingPress = (meeting: Meeting) => {
+    router.push({
+      pathname: '/meeting-details',
+      params: { meetingId: meeting.id }
+    });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const types = dataService.getUniqueTypes(meetings);
+
+  // Section meetings
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const pastMeetings = filteredMeetings.filter(m => m.date < today);
+  const todayMeetings = filteredMeetings.filter(m => {
+    const meetingDate = new Date(m.date);
+    return meetingDate >= today && meetingDate < new Date(today.getTime() + 24*60*60*1000);
+  });
+  const upcomingMeetings = filteredMeetings.filter(m => m.date > new Date(today.getTime() + 24*60*60*1000 - 1));
+
+  return (
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}>
+      <StatusBar style="dark" backgroundColor="#fff" />
+      <View style={styles.header}>
+        <Text style={styles.title}>Meetings</Text>
+        <Text style={styles.subtitle}>
+          {filteredMeetings.length} meeting{filteredMeetings.length !== 1 ? 's' : ''}
+        </Text>
+      </View>
+
+      <FilterBar
+        types={types}
+        selectedType={selectedType}
+        onTypeSelect={setSelectedType}
+      />
+
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <Search size={20} color="#666" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search meetings..."
+            placeholderTextColor="#000"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+      </View>
+
+      {/* Sectioned meeting list */}
+      <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} style={{ backgroundColor: '#f5f7fa' }}>
+        {pastMeetings.length > 0 && (
+          <View style={styles.section}>
+            <TouchableOpacity style={{flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: 16, marginBottom: 12}} onPress={() => setShowPast(v => !v)}>
+              {showPast ? <ChevronDown size={18} color="#1a1a1a" style={{marginTop: 2}} /> : <ChevronRight size={18} color="#1a1a1a" style={{marginTop: 2}} />}
+              <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Past</Text>
+            </TouchableOpacity>
+            {showPast && pastMeetings.map(item => (
+              <MeetingCard key={item.id} meeting={item} onPress={() => handleMeetingPress(item)} />
+            ))}
+          </View>
+        )}
+        {todayMeetings.length > 0 && (
+          <View style={styles.section}>
+            <TouchableOpacity style={{flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: 16, marginBottom: 12}} onPress={() => setShowToday(v => !v)}>
+              {showToday ? <ChevronDown size={18} color="#1a1a1a" style={{marginTop: 2}} /> : <ChevronRight size={18} color="#1a1a1a" style={{marginTop: 2}} />}
+              <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Today</Text>
+            </TouchableOpacity>
+            {showToday && todayMeetings.map(item => (
+              <MeetingCard key={item.id} meeting={item} onPress={() => handleMeetingPress(item)} />
+            ))}
+          </View>
+        )}
+        {upcomingMeetings.length > 0 && (
+          <View style={styles.section}>
+            <TouchableOpacity style={{flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: 16, marginBottom: 12}} onPress={() => setShowUpcoming(v => !v)}>
+              {showUpcoming ? <ChevronDown size={18} color="#1a1a1a" style={{marginTop: 2}} /> : <ChevronRight size={18} color="#1a1a1a" style={{marginTop: 2}} />}
+              <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Upcoming</Text>
+            </TouchableOpacity>
+            {showUpcoming && upcomingMeetings.map(item => (
+              <MeetingCard key={item.id} meeting={item} onPress={() => handleMeetingPress(item)} />
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f7fa',
+  },
+  header: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+  listContent: {
+    paddingBottom: 20,
+    backgroundColor: '#f5f7fa',
+  },
+  searchContainer: {
+    backgroundColor: '#f5f7fa',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 16,
+    color: '#333',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  meetingTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    marginBottom: 20,
+  },
+  meetingDetails: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  detailText: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 12,
+  },
+  section: {
+    marginBottom: 24,
+    backgroundColor: 'transparent',
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
+    marginLeft: 16,
+  },
+  sectionCount: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6b7280',
+    marginLeft: 8,
+  },
+  sectionContent: {
+    paddingTop: 4,
+  },
+  description: {
+    fontSize: 16,
+    color: '#666',
+    lineHeight: 24,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 12,
+  },
+});
