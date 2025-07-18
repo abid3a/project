@@ -12,6 +12,16 @@ import { supabase } from '@/services/supabaseClient';
 import { Connection, Session, Meeting, Note } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 import LinkedinWhiteIcon from '@/components/LinkedinWhiteIcon';
+const defaultAvatar = require('@/assets/images/icon.png');
+
+// Map for local banner images (same as in ConnectionCard)
+const bannerMap: Record<string, any> = {
+  'banners/1.png': require('@/assets/images/banners/1.png'),
+  'banners/2.png': require('@/assets/images/banners/2.png'),
+  'banners/3.png': require('@/assets/images/banners/3.png'),
+  'banners/4.png': require('@/assets/images/banners/4.png'),
+  'banners/5.png': require('@/assets/images/banners/5.png'),
+};
 
 export default function ConnectionDetailsScreen() {
   const router = useRouter();
@@ -229,7 +239,17 @@ export default function ConnectionDetailsScreen() {
             ) : null}
             <View style={styles.profileSection}>
               <View style={styles.avatar}>
-                <User size={32} color="#666" />
+                {connection.profileImage ? (
+                  typeof connection.profileImage === 'number' ? (
+                    <Image source={connection.profileImage} style={{ width: 64, height: 64, borderRadius: 32 }} />
+                  ) : bannerMap[connection.profileImage] ? (
+                    <Image source={bannerMap[connection.profileImage]} style={{ width: 64, height: 64, borderRadius: 32 }} />
+                  ) : (
+                    <Image source={{ uri: connection.profileImage }} style={{ width: 64, height: 64, borderRadius: 32 }} defaultSource={defaultAvatar} />
+                  )
+                ) : (
+                  <Image source={defaultAvatar} style={{ width: 64, height: 64, borderRadius: 32 }} />
+                )}
               </View>
               <Text style={styles.connectionName}>
                 {connection.firstName} {connection.lastName}

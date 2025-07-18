@@ -3,12 +3,11 @@ import { supabase } from './supabaseClient';
 
 // Remove DataService and all mock data usage
 
-// Fetch all connections for a given company_uid from Supabase
-export async function fetchConnections(companyUID: string) {
+// Fetch all connections from Supabase
+export async function fetchConnections() {
   const { data, error } = await supabase
     .from('connections')
-    .select('*')
-    .eq('company_uid', companyUID);
+    .select('*');
   if (error) throw error;
   return data;
 }

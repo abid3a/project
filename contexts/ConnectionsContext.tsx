@@ -26,7 +26,7 @@ export function ConnectionsProvider({ children }: { children: React.ReactNode })
     const companyUID = user.companyUID;
     try {
       const [data, favIds] = await Promise.all([
-        fetchConnections(companyUID),
+        fetchConnections(), // No companyUID argument
         fetchFavoriteConnectionIds(companyUID),
       ]);
       // Map snake_case to camelCase for frontend compatibility
