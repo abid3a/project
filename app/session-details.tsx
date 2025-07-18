@@ -100,6 +100,31 @@ export default function SessionDetailsScreen() {
     });
   };
 
+  // Add a helper to format duration
+  function formatDuration(duration: number | string): string {
+    if (typeof duration === 'number') {
+      if (duration >= 1) {
+        return `${duration} hour${duration !== 1 ? 's' : ''}`;
+      } else if (duration > 0) {
+        return `${Math.round(duration * 60)} min`;
+      } else {
+        return '0 min';
+      }
+    } else if (typeof duration === 'string') {
+      const [hours, minutes] = duration.split(':').map(Number);
+      if (hours && hours > 0 && (!minutes || minutes === 0)) {
+        return `${hours} hour${hours !== 1 ? 's' : ''}`;
+      } else if (hours && hours > 0 && minutes && minutes > 0) {
+        return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} min`;
+      } else if ((!hours || hours === 0) && minutes && minutes > 0) {
+        return `${minutes} min`;
+      } else {
+        return '0 min';
+      }
+    }
+    return '';
+  }
+
   if (!session) {
     return (
       <SafeAreaView style={styles.container}>
@@ -140,7 +165,7 @@ export default function SessionDetailsScreen() {
             <View style={styles.detailRow}>
               <Clock size={20} color="#666" />
               <Text style={styles.detailText}>
-                {formatTime(session.date)} • {session.duration} minutes
+                {formatTime(session.date)} • {formatDuration(session.duration)}
               </Text>
             </View>
             <View style={styles.detailRow}>

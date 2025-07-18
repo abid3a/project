@@ -131,7 +131,8 @@ export default function SessionsScreen() {
     });
   };
 
-  const types = getUniqueTypes(sessions);
+  // When computing types for the FilterBar, filter out empty types
+  const types = getUniqueTypes(sessions).filter(t => t && t.trim() !== '');
 
   // Section sessions
   const today = new Date();

@@ -240,11 +240,17 @@ export function mapConnectionFromSupabase(row: any): Connection {
 
 // Helper to map Supabase session row to Session type
 export function mapSessionFromSupabase(row: any): Session {
+  // Parse duration: if string like '3:00', use the hours part as a number
+  let duration = row.duration;
+  if (typeof duration === 'string' && duration.includes(':')) {
+    const [hours] = duration.split(':');
+    duration = parseInt(hours, 10);
+  }
   return {
     id: row.id,
     name: row.name,
     date: row.date ? new Date(row.date) : new Date(),
-    duration: row.duration,
+    duration,
     type: row.type,
     location: row.location,
     description: row.description,
