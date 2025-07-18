@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart, Search } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
@@ -27,7 +27,6 @@ export default function ConnectionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [connectionCounts, setConnectionCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     filterAndSearchConnections();
@@ -157,7 +156,7 @@ export default function ConnectionsScreen() {
   );
 
   return (
-    <SafeAreaView style={[{ flex: 1, backgroundColor: 'transparent', paddingTop: insets.top }]}> 
+    <SafeAreaView style={styles.container}> 
       <StatusBar style="dark" backgroundColor="#fff" />
       {/* Fixed header, filter, and search */}
       {renderHeader()}
