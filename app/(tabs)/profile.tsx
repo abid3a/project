@@ -7,7 +7,7 @@ import { Building, Mail, LogOut, CreditCard as Edit, Shield, Plus, X, User, File
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 import { authService } from '@/services/authService';
-import { dataService, fetchReports } from '@/services/dataService';
+import { fetchReports } from '@/services/dataService';
 import { ScrollView, Modal, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
@@ -32,9 +32,10 @@ export default function ProfileScreen() {
   }, [reportsModalVisible, user]);
 
   const loadReports = () => {
-    const companyUID = user?.role === 'User' ? user.companyUID : undefined;
-    const reportData = dataService.getReports(companyUID);
-    setReports(reportData);
+    if (!user) return;
+    fetchReports(user.companyUID)
+      .then(setReports)
+      .catch(() => setReports([]));
   };
 
   const handleDownloadReport = async (report: Report) => {

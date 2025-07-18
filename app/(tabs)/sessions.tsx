@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, SafeAreaView, FlatList } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView , PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { X, Calendar, Clock, MapPin, Users, Search, ChevronDown, ChevronRight } from 'lucide-react-native';
 import { SessionCard } from '@/components/SessionCard';
 import FilterBar from '@/components/FilterBar';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { dataService, fetchSessions } from '@/services/dataService';
+import { fetchSessions, fetchSessionMentors, getUniqueTypes, filterByType } from '@/services/dataService';
 import { Session, Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,6 +24,7 @@ export default function SessionsScreen() {
   const [showPast, setShowPast] = useState(true);
   const [showToday, setShowToday] = useState(true);
   const [showUpcoming, setShowUpcoming] = useState(true);
+  const [mentorCounts, setMentorCounts] = useState<Record<string, number>>({});
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -34,6 +34,23 @@ export default function SessionsScreen() {
   useEffect(() => {
     filterAndSearchSessions();
   }, [sessions, selectedType, searchQuery]);
+
+  useEffect(() => {
+    // Fetch mentor counts for filtered sessions
+    async function fetchCounts() {
+      const counts: Record<string, number> = {};
+      await Promise.all(filteredSessions.map(async (session) => {
+        const mentorIds = await fetchSessionMentors(session.id);
+        counts[session.id] = mentorIds.length;
+      }));
+      setMentorCounts(counts);
+    }
+    if (filteredSessions.length > 0) {
+      fetchCounts();
+    } else {
+      setMentorCounts({});
+    }
+  }, [filteredSessions]);
 
   const loadSessions = async () => {
     if (!user) {
@@ -71,7 +88,7 @@ export default function SessionsScreen() {
     
     // Apply type filter
     if (selectedType) {
-      filtered = dataService.filterByType(filtered, selectedType);
+      filtered = filterByType(filtered, selectedType);
     }
     
     // Apply search filter
@@ -112,7 +129,7 @@ export default function SessionsScreen() {
     });
   };
 
-  const types = dataService.getUniqueTypes(sessions);
+  const types = getUniqueTypes(sessions);
 
   // Section sessions
   const today = new Date();
@@ -164,7 +181,7 @@ export default function SessionsScreen() {
               <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Past</Text>
             </TouchableOpacity>
             {showPast && pastSessions.map(item => (
-              <SessionCard key={item.id} session={item} onPress={() => handleSessionPress(item)} />
+              <SessionCard key={item.id} session={{ ...item, mentorIds: Array(mentorCounts[item.id] || 0).fill('') }} onPress={() => handleSessionPress(item)} />
             ))}
           </View>
         )}
@@ -175,7 +192,7 @@ export default function SessionsScreen() {
               <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Today</Text>
             </TouchableOpacity>
             {showToday && todaySessions.map(item => (
-              <SessionCard key={item.id} session={item} onPress={() => handleSessionPress(item)} />
+              <SessionCard key={item.id} session={{ ...item, mentorIds: Array(mentorCounts[item.id] || 0).fill('') }} onPress={() => handleSessionPress(item)} />
             ))}
           </View>
         )}
@@ -186,7 +203,7 @@ export default function SessionsScreen() {
               <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Upcoming</Text>
             </TouchableOpacity>
             {showUpcoming && upcomingSessions.map(item => (
-              <SessionCard key={item.id} session={item} onPress={() => handleSessionPress(item)} />
+              <SessionCard key={item.id} session={{ ...item, mentorIds: Array(mentorCounts[item.id] || 0).fill('') }} onPress={() => handleSessionPress(item)} />
             ))}
           </View>
         )}

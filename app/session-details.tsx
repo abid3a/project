@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X, Calendar, Clock, MapPin, Users } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { dataService, fetchSessions, fetchConnections, fetchSessionMentors, fetchMentorConnections } from '@/services/dataService';
+import { dataService, fetchSessions, fetchConnections, fetchSessionMentors, fetchMentorConnections, fetchSessionCountForConnection, fetchMeetingCountForConnection } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Session, Connection } from '@/types';
 
@@ -17,6 +17,7 @@ export default function SessionDetailsScreen() {
   
   const [session, setSession] = useState<Session | null>(null);
   const [mentors, setMentors] = useState<Connection[]>([]);
+  const [mentorCounts, setMentorCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
 
   useEffect(() => {
     const loadSessionAndMentors = async () => {
@@ -52,6 +53,26 @@ export default function SessionDetailsScreen() {
     };
     loadSessionAndMentors();
   }, [sessionId, user]);
+
+  useEffect(() => {
+    // Fetch session and meeting counts for mentors
+    async function fetchCounts() {
+      const counts: Record<string, { sessions: number; meetings: number }> = {};
+      await Promise.all(mentors.map(async (conn) => {
+        const [sessions, meetings] = await Promise.all([
+          fetchSessionCountForConnection(conn.id),
+          fetchMeetingCountForConnection(conn.id),
+        ]);
+        counts[conn.id] = { sessions, meetings };
+      }));
+      setMentorCounts(counts);
+    }
+    if (mentors.length > 0) {
+      fetchCounts();
+    } else {
+      setMentorCounts({});
+    }
+  }, [mentors]);
 
   const handleConnectionPress = (connection: Connection) => {
     router.push({
@@ -139,6 +160,8 @@ export default function SessionDetailsScreen() {
               <ConnectionCard
                 key={mentor.id}
                 connection={mentor}
+                sessionCount={mentorCounts[mentor.id]?.sessions}
+                meetingCount={mentorCounts[mentor.id]?.meetings}
                 onPress={() => handleConnectionPress(mentor)}
                 showFavoriteButton={false}
               />

@@ -1,123 +1,7 @@
 import { Session, Meeting, Connection, Note, Report } from '@/types';
-import { mockSessions, mockMeetings, mockConnections, mockNotes, mockReports } from './mockData';
 import { supabase } from './supabaseClient';
 
-class DataService {
-  private sessions: Session[] = [...mockSessions];
-  private meetings: Meeting[] = [...mockMeetings];
-  private connections: Connection[] = [...mockConnections];
-  private notes: Note[] = [...mockNotes];
-  private reports: Report[] = [...mockReports];
-
-  // Sessions
-  getSessions(companyUID?: string): Session[] {
-    if (companyUID) {
-      return this.sessions.filter(s => s.companyUID === companyUID);
-    }
-    return this.sessions;
-  }
-
-  getSessionById(id: string): Session | undefined {
-    return this.sessions.find(s => s.id === id);
-  }
-
-  // Meetings
-  getMeetings(companyUID?: string): Meeting[] {
-    if (companyUID) {
-      return this.meetings.filter(m => m.companyUID === companyUID);
-    }
-    return this.meetings;
-  }
-
-  getMeetingById(id: string): Meeting | undefined {
-    return this.meetings.find(m => m.id === id);
-  }
-
-  // Connections
-  getConnections(companyUID?: string): Connection[] {
-    if (companyUID) {
-      return this.connections.filter(c => c.companyUID === companyUID);
-    }
-    return this.connections;
-  }
-
-  getConnectionById(id: string): Connection | undefined {
-    return this.connections.find(c => c.id === id);
-  }
-
-  toggleConnectionFavorite(id: string): void {
-    const connection = this.connections.find(c => c.id === id);
-    if (connection) {
-      connection.isFavorite = !connection.isFavorite;
-    }
-  }
-
-  // Notes
-  getNotes(companyUID?: string): Note[] {
-    if (companyUID) {
-      return this.notes.filter(n => n.companyUID === companyUID);
-    }
-    return this.notes;
-  }
-
-  getNotesByConnectionId(connectionId: string): Note[] {
-    return this.notes.filter(n => n.connectionId === connectionId);
-  }
-
-  addNote(note: Omit<Note, 'id' | 'createdAt'>): Note {
-    const newNote: Note = {
-      ...note,
-      id: `note-${Date.now()}`,
-      createdAt: new Date(),
-    };
-    this.notes.push(newNote);
-    return newNote;
-  }
-
-  editNote(noteId: string, updates: Partial<Omit<Note, 'id' | 'connectionId' | 'companyUID' | 'createdAt'>>): Note | undefined {
-    const note = this.notes.find(n => n.id === noteId);
-    if (note) {
-      if (updates.topic !== undefined) note.topic = updates.topic;
-      if (updates.content !== undefined) note.content = updates.content;
-      // Only topic and content are editable
-    }
-    return note;
-  }
-
-  deleteNote(noteId: string): boolean {
-    const index = this.notes.findIndex(n => n.id === noteId);
-    if (index !== -1) {
-      this.notes.splice(index, 1);
-      return true;
-    }
-    return false;
-  }
-
-  // Reports
-  getReports(companyUID?: string): Report[] {
-    if (companyUID) {
-      return this.reports.filter(r => r.companyUID === companyUID);
-    }
-    return this.reports;
-  }
-
-  // Favorites
-  getFavorites(companyUID?: string): Connection[] {
-    return this.getConnections(companyUID).filter(c => c.isFavorite);
-  }
-
-  // Filter helpers
-  getUniqueTypes(items: (Session | Meeting | Connection)[]): string[] {
-    const types = items.map(item => item.type);
-    return Array.from(new Set(types));
-  }
-
-  filterByType<T extends Session | Meeting | Connection>(items: T[], type: string): T[] {
-    return items.filter(item => item.type === type);
-  }
-}
-
-export const dataService = new DataService();
+// Remove DataService and all mock data usage
 
 // Fetch all connections for a given company_uid from Supabase
 export async function fetchConnections(companyUID: string) {
@@ -304,6 +188,16 @@ export async function fetchSessionAttendees(sessionId: string) {
   return (data || []).map(row => row.connection_id);
 }
 
+// Fetch all session IDs for a given connection from session_attendees
+export async function fetchSessionsAttendingForConnection(connectionId: string) {
+  const { data, error } = await supabase
+    .from('session_mentors')
+    .select('session_id')
+    .eq('connection_id', connectionId);
+  if (error) throw error;
+  return (data || []).map(row => row.session_id);
+}
+
 // Fetch all session IDs for a given connection from session_mentors
 export async function fetchSessionsForConnection(connectionId: string) {
   const { data, error } = await supabase
@@ -325,7 +219,7 @@ export async function fetchSessionMentors(sessionId: string) {
 }
 
 // Helper to map Supabase connection row to Connection type
-function mapConnectionFromSupabase(row: any): Connection {
+export function mapConnectionFromSupabase(row: any): Connection {
   return {
     id: row.id,
     firstName: row.first_name,
@@ -367,4 +261,35 @@ export async function fetchMentorConnections(connectionIds: string[]) {
     .in('id', connectionIds);
   if (error) throw error;
   return (data || []).map(mapConnectionFromSupabase);
+}
+
+// Fetch the number of sessions for a given connection from session_mentors
+export async function fetchSessionCountForConnection(connectionId: string) {
+  const { count, error } = await supabase
+    .from('session_mentors')
+    .select('session_id', { count: 'exact', head: true })
+    .eq('connection_id', connectionId);
+  if (error) throw error;
+  return count || 0;
+}
+
+// Fetch the number of meetings for a given connection from meeting_attendees
+export async function fetchMeetingCountForConnection(connectionId: string) {
+  const { count, error } = await supabase
+    .from('meeting_attendees')
+    .select('meeting_id', { count: 'exact', head: true })
+    .eq('connection_id', connectionId);
+  if (error) throw error;
+  return count || 0;
+}
+
+// Utility: Get unique types from a list of items
+export function getUniqueTypes(items: { type: string }[]): string[] {
+  const types = items.map(item => item.type);
+  return Array.from(new Set(types));
+}
+
+// Utility: Filter items by type
+export function filterByType<T extends { type: string }>(items: T[], type: string): T[] {
+  return items.filter(item => item.type === type);
 }

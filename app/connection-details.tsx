@@ -7,12 +7,11 @@ import { SessionCard } from '@/components/SessionCard';
 import { MeetingCard } from '@/components/MeetingCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { dataService, fetchNotesForConnection, addNote as addNoteSupabase, editNote as editNoteSupabase, deleteNote as deleteNoteSupabase, fetchMeetingsForConnection, fetchSessionsForConnection, fetchSessions } from '@/services/dataService';
+import { dataService, fetchNotesForConnection, addNote as addNoteSupabase, editNote as editNoteSupabase, deleteNote as deleteNoteSupabase, fetchMeetingsForConnection, fetchSessionsForConnection, fetchSessions, mapSessionFromSupabase, fetchSessionMentors, fetchMeetingAttendees, fetchSessionsAttendingForConnection } from '@/services/dataService';
 import { supabase } from '@/services/supabaseClient';
 import { Connection, Session, Meeting, Note } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 import LinkedinWhiteIcon from '@/components/LinkedinWhiteIcon';
-import { mapSessionFromSupabase } from '@/services/dataService';
 
 export default function ConnectionDetailsScreen() {
   const router = useRouter();
@@ -38,36 +37,55 @@ export default function ConnectionDetailsScreen() {
       const foundConnection = connections.find(c => c.id === connectionId);
       if (foundConnection) {
         setConnection(foundConnection);
-        
-        // Load linked sessions from Supabase join table
-        fetchSessionsForConnection(foundConnection.id)
-          .then(async sessionIds => {
-            if (!sessionIds.length) {
-              setLinkedSessions([]);
+        // --- SESSIONS: Fetch as mentor and attendee ---
+        Promise.all([
+          fetchSessionsForConnection(foundConnection.id), // mentor
+          fetchSessionsAttendingForConnection(foundConnection.id) // attendee
+        ]).then(async ([mentorSessionIds, attendeeSessionIds]) => {
+          const allSessionIds = Array.from(new Set([...mentorSessionIds, ...attendeeSessionIds].map(String)));
+          if (!allSessionIds.length) {
+            setLinkedSessions([]);
+            return;
+          }
+          const allSessions = await fetchSessions(user.companyUID);
+          const mapped = (allSessions || []).map(mapSessionFromSupabase);
+          const filteredSessions = mapped.filter((s: any) => allSessionIds.includes(String(s.id)));
+          // Fetch mentorIds for each session
+          const sessionsWithMentors = await Promise.all(
+            filteredSessions.map(async (session: any) => {
+              const mentorIds = await fetchSessionMentors(session.id);
+              return { ...session, mentorIds };
+            })
+          );
+          setLinkedSessions(sessionsWithMentors);
+        }).catch(() => setLinkedSessions([]));
+        // --- MEETINGS: Only as attendee (no organizerId in Supabase) ---
+        fetchMeetingsForConnection(foundConnection.id)
+          .then(async (attendeeMeetingIds: string[]) => {
+            const allMeetingIds = attendeeMeetingIds.map(String);
+            if (!allMeetingIds.length) {
+              setLinkedMeetings([]);
               return;
             }
-            // Fetch all sessions for these IDs from Supabase
-            const allSessions = await fetchSessions(user.companyUID);
-            const mapped = (allSessions || []).map(mapSessionFromSupabase);
-            setLinkedSessions(mapped.filter((s: any) => sessionIds.includes(s.id)));
-          })
-          .catch(() => setLinkedSessions([]));
-        
-        // Load linked meetings from Supabase join table
-        fetchMeetingsForConnection(foundConnection.id)
-          .then(meetingIds => {
-            // Fetch all meetings for these IDs from Supabase
-            supabase
+            const { data, error } = await supabase
               .from('meetings')
               .select('*')
-              .in('id', meetingIds)
-              .then(({ data, error }) => {
-                if (error) setLinkedMeetings([]);
-                else setLinkedMeetings(data || []);
-              });
+              .in('id', allMeetingIds);
+            if (error || !data) {
+              setLinkedMeetings([]);
+              return;
+            }
+            const filteredMeetings = data.filter((m: any) => allMeetingIds.includes(String(m.id)));
+            // Fetch attendeeIds for each meeting
+            const meetingsWithAttendees = await Promise.all(
+              filteredMeetings.map(async (meeting: any) => {
+                const attendeeIds = await fetchMeetingAttendees(meeting.id);
+                return { ...meeting, attendeeIds };
+              })
+            );
+            setLinkedMeetings(meetingsWithAttendees);
           })
           .catch(() => setLinkedMeetings([]));
-        
         // Load notes for this connection from Supabase
         fetchNotesForConnection(user.companyUID, foundConnection.id)
           .then(setNotes)

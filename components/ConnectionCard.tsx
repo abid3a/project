@@ -8,6 +8,8 @@ interface ConnectionCardProps {
   onPress: () => void;
   onToggleFavorite?: () => void;
   showFavoriteButton?: boolean;
+  sessionCount?: number;
+  meetingCount?: number;
 }
 
 const typeColors: Record<string, { bg: string; text: string }> = {
@@ -30,7 +32,9 @@ export function ConnectionCard({
   connection, 
   onPress, 
   onToggleFavorite,
-  showFavoriteButton = true 
+  showFavoriteButton = true,
+  sessionCount,
+  meetingCount
 }: ConnectionCardProps) {
   const [pressed, setPressed] = useState(false);
   const typeColor = typeColors[connection.type] || { bg: '#f5f5f5', text: '#888' };
@@ -91,9 +95,9 @@ export function ConnectionCard({
       </View>
       <Text style={styles.bio} numberOfLines={2}>{connection.bio}</Text>
       <View style={styles.statsRow}>
-        <Text style={styles.statText}>{(connection.linkedSessionIds || []).length} session{(connection.linkedSessionIds || []).length !== 1 ? 's' : ''}</Text>
+        <Text style={styles.statText}>{typeof sessionCount === 'number' ? sessionCount : (connection.linkedSessionIds || []).length} session{(typeof sessionCount === 'number' ? sessionCount : (connection.linkedSessionIds || []).length) !== 1 ? 's' : ''}</Text>
         <Text style={styles.statDot}>·</Text>
-        <Text style={styles.statText}>{(connection.linkedMeetingIds || []).length} meeting{(connection.linkedMeetingIds || []).length !== 1 ? 's' : ''}</Text>
+        <Text style={styles.statText}>{typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length} meeting{(typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length) !== 1 ? 's' : ''}</Text>
       </View>
     </Pressable>
   );

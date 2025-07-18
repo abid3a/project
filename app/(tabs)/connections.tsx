@@ -14,7 +14,7 @@ import { ConnectionCard } from '@/components/ConnectionCard';
 import FilterBar from '@/components/FilterBar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { dataService } from '@/services/dataService';
+import { fetchSessionCountForConnection, fetchMeetingCountForConnection, getUniqueTypes, filterByType } from '@/services/dataService';
 import { Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 
@@ -26,10 +26,31 @@ export default function ConnectionsScreen() {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
+  const [connectionCounts, setConnectionCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
 
   useEffect(() => {
     filterAndSearchConnections();
   }, [connections, showFavorites, searchQuery, selectedType]);
+
+  useEffect(() => {
+    // Fetch session and meeting counts for filtered connections
+    async function fetchCounts() {
+      const counts: Record<string, { sessions: number; meetings: number }> = {};
+      await Promise.all(filteredConnections.map(async (conn) => {
+        const [sessions, meetings] = await Promise.all([
+          fetchSessionCountForConnection(conn.id),
+          fetchMeetingCountForConnection(conn.id),
+        ]);
+        counts[conn.id] = { sessions, meetings };
+      }));
+      setConnectionCounts(counts);
+    }
+    if (filteredConnections.length > 0) {
+      fetchCounts();
+    } else {
+      setConnectionCounts({});
+    }
+  }, [filteredConnections]);
 
   const filterAndSearchConnections = () => {
     let filtered = showFavorites 
@@ -38,7 +59,7 @@ export default function ConnectionsScreen() {
     
     // Apply type filter
     if (selectedType) {
-      filtered = dataService.filterByType(filtered, selectedType);
+      filtered = filterByType(filtered, selectedType);
     }
     
     // Apply search filter
@@ -77,7 +98,7 @@ export default function ConnectionsScreen() {
   };
 
   const favoriteCount = connections.filter(c => c.isFavorite).length;
-  const types = dataService.getUniqueTypes(connections);
+  const types = getUniqueTypes(connections);
 
   // Header, filter, and search are now outside the FlatList
   const renderHeader = () => (
@@ -174,6 +195,8 @@ export default function ConnectionsScreen() {
             renderItem={({ item }) => (
               <ConnectionCard
                 connection={item}
+                sessionCount={connectionCounts[item.id]?.sessions}
+                meetingCount={connectionCounts[item.id]?.meetings}
                 onPress={() => handleConnectionPress(item)}
                 onToggleFavorite={() => handleToggleFavorite(item.id)}
               />

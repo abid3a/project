@@ -5,35 +5,72 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X, Calendar, Clock, MapPin, User } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { dataService } from '@/services/dataService';
 import { Meeting, Connection } from '@/types';
-import { fetchMeetingAttendees } from '@/services/dataService';
+import { fetchMeetingAttendees , fetchSessionCountForConnection, fetchMeetingCountForConnection , fetchMeetings } from '@/services/dataService';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MeetingDetailsScreen() {
   const router = useRouter();
   const { meetingId } = useLocalSearchParams<{ meetingId: string }>();
   const { connections } = useConnections();
+  const { user } = useAuth();
   
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [attendees, setAttendees] = useState<Connection[]>([]);
+  const [attendeeCounts, setAttendeeCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
 
   useEffect(() => {
-    if (meetingId) {
-      const foundMeeting = dataService.getMeetingById(meetingId);
-      if (foundMeeting) {
-        setMeeting(foundMeeting);
-        // Load attendees for this meeting from Supabase join table
-        fetchMeetingAttendees(meetingId)
-          .then(attendeeIds => {
-            const meetingAttendees = attendeeIds
-              .map(id => connections.find(c => c.id === id))
-              .filter(Boolean) as Connection[];
-            setAttendees(meetingAttendees);
-          })
-          .catch(() => setAttendees([]));
-      }
+    if (meetingId && user) {
+      // Fetch all meetings for the user's company from Supabase
+      fetchMeetings(user.companyUID)
+        .then((meetings) => {
+          const foundMeeting = (meetings || []).find((m: any) => m.id === meetingId);
+          if (foundMeeting) {
+            // Ensure date is a Date object
+            if (foundMeeting.date && typeof foundMeeting.date === 'string') {
+              foundMeeting.date = new Date(foundMeeting.date);
+            }
+            setMeeting(foundMeeting);
+            // Load attendees for this meeting from Supabase join table
+            fetchMeetingAttendees(meetingId)
+              .then(attendeeIds => {
+                const meetingAttendees = attendeeIds
+                  .map(id => connections.find(c => c.id === id))
+                  .filter(Boolean) as Connection[];
+                setAttendees(meetingAttendees);
+              })
+              .catch(() => setAttendees([]));
+          } else {
+            setMeeting(null);
+            setAttendees([]);
+          }
+        })
+        .catch(() => {
+          setMeeting(null);
+          setAttendees([]);
+        });
     }
-  }, [meetingId, connections]);
+  }, [meetingId, connections, user]);
+
+  useEffect(() => {
+    // Fetch session and meeting counts for attendees
+    async function fetchCounts() {
+      const counts: Record<string, { sessions: number; meetings: number }> = {};
+      await Promise.all(attendees.map(async (conn) => {
+        const [sessions, meetings] = await Promise.all([
+          fetchSessionCountForConnection(conn.id),
+          fetchMeetingCountForConnection(conn.id),
+        ]);
+        counts[conn.id] = { sessions, meetings };
+      }));
+      setAttendeeCounts(counts);
+    }
+    if (attendees.length > 0) {
+      fetchCounts();
+    } else {
+      setAttendeeCounts({});
+    }
+  }, [attendees]);
 
   const handleConnectionPress = (connection: Connection) => {
     router.push({
@@ -121,6 +158,8 @@ export default function MeetingDetailsScreen() {
               <ConnectionCard
                 key={attendee.id}
                 connection={attendee}
+                sessionCount={attendeeCounts[attendee.id]?.sessions}
+                meetingCount={attendeeCounts[attendee.id]?.meetings}
                 onPress={() => handleConnectionPress(attendee)}
                 showFavoriteButton={false}
               />

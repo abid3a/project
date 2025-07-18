@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, SafeAreaView, FlatList } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView , PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { X, Calendar, Clock, MapPin, Users, User, Search, ChevronDown, ChevronRight } from 'lucide-react-native';
 import { MeetingCard } from '@/components/MeetingCard';
 import FilterBar from '@/components/FilterBar';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { dataService } from '@/services/dataService';
+import { fetchMeetings, fetchMeetingAttendees, getUniqueTypes, filterByType } from '@/services/dataService';
 import { Meeting, Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,6 +24,7 @@ export default function MeetingsScreen() {
   const [showPast, setShowPast] = useState(true);
   const [showToday, setShowToday] = useState(true);
   const [showUpcoming, setShowUpcoming] = useState(true);
+  const [attendeeCounts, setAttendeeCounts] = useState<Record<string, number>>({});
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -35,10 +35,53 @@ export default function MeetingsScreen() {
     filterAndSearchMeetings();
   }, [meetings, selectedType, searchQuery]);
 
-  const loadMeetings = () => {
-    const companyUID = user?.role === 'User' ? user.companyUID : undefined;
-    const meetingData = dataService.getMeetings(companyUID);
-    setMeetings(meetingData);
+  useEffect(() => {
+    // Fetch attendee counts for filtered meetings
+    async function fetchCounts() {
+      const counts: Record<string, number> = {};
+      await Promise.all(filteredMeetings.map(async (meeting) => {
+        const attendeeIds = await fetchMeetingAttendees(meeting.id);
+        counts[meeting.id] = attendeeIds.length;
+      }));
+      setAttendeeCounts(counts);
+    }
+    if (filteredMeetings.length > 0) {
+      fetchCounts();
+    } else {
+      setAttendeeCounts({});
+    }
+  }, [filteredMeetings]);
+
+  const loadMeetings = async () => {
+    if (!user) {
+      setMeetings([]);
+      return;
+    }
+    const companyUID = user.role === 'User' ? user.companyUID : undefined;
+    if (!companyUID) {
+      setMeetings([]);
+      return;
+    }
+    try {
+      const data = await fetchMeetings(companyUID);
+      // Map snake_case to camelCase and parse date
+      const mapped = (data || []).map((meeting: any) => ({
+        ...meeting,
+        id: meeting.id,
+        title: meeting.title,
+        date: meeting.date ? new Date(meeting.date) : new Date(),
+        duration: meeting.duration,
+        type: meeting.type,
+        location: meeting.location,
+        description: meeting.description,
+        companyUID: meeting.company_uid,
+        attendeeIds: meeting.attendee_ids || [],
+        organizerId: meeting.organizer_id,
+      }));
+      setMeetings(mapped);
+    } catch (error) {
+      setMeetings([]);
+    }
   };
 
   const filterAndSearchMeetings = () => {
@@ -46,7 +89,7 @@ export default function MeetingsScreen() {
     
     // Apply type filter
     if (selectedType) {
-      filtered = dataService.filterByType(filtered, selectedType);
+      filtered = filterByType(filtered, selectedType);
     }
     
     // Apply search filter
@@ -87,7 +130,7 @@ export default function MeetingsScreen() {
     });
   };
 
-  const types = dataService.getUniqueTypes(meetings);
+  const types = getUniqueTypes(meetings);
 
   // Section meetings
   const today = new Date();
@@ -139,7 +182,7 @@ export default function MeetingsScreen() {
               <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Past</Text>
             </TouchableOpacity>
             {showPast && pastMeetings.map(item => (
-              <MeetingCard key={item.id} meeting={item} onPress={() => handleMeetingPress(item)} />
+              <MeetingCard key={item.id} meeting={{ ...item, attendeeIds: Array(attendeeCounts[item.id] || 0).fill('') }} onPress={() => handleMeetingPress(item)} />
             ))}
           </View>
         )}
@@ -150,7 +193,7 @@ export default function MeetingsScreen() {
               <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Today</Text>
             </TouchableOpacity>
             {showToday && todayMeetings.map(item => (
-              <MeetingCard key={item.id} meeting={item} onPress={() => handleMeetingPress(item)} />
+              <MeetingCard key={item.id} meeting={{ ...item, attendeeIds: Array(attendeeCounts[item.id] || 0).fill('') }} onPress={() => handleMeetingPress(item)} />
             ))}
           </View>
         )}
@@ -161,7 +204,7 @@ export default function MeetingsScreen() {
               <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Upcoming</Text>
             </TouchableOpacity>
             {showUpcoming && upcomingMeetings.map(item => (
-              <MeetingCard key={item.id} meeting={item} onPress={() => handleMeetingPress(item)} />
+              <MeetingCard key={item.id} meeting={{ ...item, attendeeIds: Array(attendeeCounts[item.id] || 0).fill('') }} onPress={() => handleMeetingPress(item)} />
             ))}
           </View>
         )}
