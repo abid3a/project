@@ -212,14 +212,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Member since {user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-            }) : 'N/A'}
-          </Text>
-        </View>
+        {/* Remove the footer with 'Member since' */}
       </ScrollView>
       {/* Admin Portal Modal */}
       <Modal
