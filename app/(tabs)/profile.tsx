@@ -317,9 +317,11 @@ export default function ProfileScreen() {
       >
         <GestureHandlerRootView style={{ flex: 1 }}>
           <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-              <Text style={styles.title}>Reports</Text>
-              <TouchableOpacity style={{ padding: 4 }} onPress={() => setReportsModalVisible(false)}>
+            <View style={[styles.header, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}> 
+              <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={styles.title}>Reports</Text>
+              </View>
+              <TouchableOpacity style={{ position: 'absolute', right: 20, top: 20, padding: 4 }} onPress={() => setReportsModalVisible(false)}>
                 <X size={24} color="#666" />
               </TouchableOpacity>
             </View>
