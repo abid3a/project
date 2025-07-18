@@ -8,7 +8,7 @@ interface ConnectionCardProps {
   onPress: () => void;
   onToggleFavorite?: () => void;
   showFavoriteButton?: boolean;
-  sessionCount?: number;
+  sessionCount?: number | undefined;
   meetingCount?: number;
 }
 
@@ -95,8 +95,10 @@ export function ConnectionCard({
       </View>
       <Text style={styles.bio} numberOfLines={2}>{connection.bio}</Text>
       <View style={styles.statsRow}>
-        <Text style={styles.statText}>{typeof sessionCount === 'number' ? sessionCount : (connection.linkedSessionIds || []).length} session{(typeof sessionCount === 'number' ? sessionCount : (connection.linkedSessionIds || []).length) !== 1 ? 's' : ''}</Text>
-        <Text style={styles.statDot}>·</Text>
+        {typeof sessionCount === 'number' && (
+          <Text style={styles.statText}>{sessionCount} session{sessionCount !== 1 ? 's' : ''}</Text>
+        )}
+        {typeof sessionCount === 'number' && <Text style={styles.statDot}>·</Text>}
         <Text style={styles.statText}>{typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length} meeting{(typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length) !== 1 ? 's' : ''}</Text>
       </View>
     </Pressable>

@@ -14,7 +14,7 @@ import { ConnectionCard } from '@/components/ConnectionCard';
 import FilterBar from '@/components/FilterBar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { fetchSessionCountForConnection, fetchMeetingCountForConnection, getUniqueTypes, filterByType } from '@/services/dataService';
+import { fetchSessionCountForConnectionAndCohort, fetchMeetingCountForConnection, getUniqueTypes, filterByType } from '@/services/dataService';
 import { Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 
@@ -37,10 +37,11 @@ export default function ConnectionsScreen() {
     async function fetchCounts() {
       const counts: Record<string, { sessions: number; meetings: number }> = {};
       await Promise.all(filteredConnections.map(async (conn) => {
-        const [sessions, meetings] = await Promise.all([
-          fetchSessionCountForConnection(conn.id),
-          fetchMeetingCountForConnection(conn.id),
-        ]);
+        let sessions = undefined;
+        if (user && user.cohort) {
+          sessions = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
+        }
+        const meetings = await fetchMeetingCountForConnection(conn.id);
         counts[conn.id] = { sessions, meetings };
       }));
       setConnectionCounts(counts);
@@ -50,7 +51,7 @@ export default function ConnectionsScreen() {
     } else {
       setConnectionCounts({});
     }
-  }, [filteredConnections]);
+  }, [filteredConnections, user]);
 
   const filterAndSearchConnections = () => {
     let filtered = showFavorites 
