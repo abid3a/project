@@ -5,8 +5,7 @@ import {
   StyleSheet, 
   FlatList, 
   TouchableOpacity,
-  TextInput,
-  ScrollView
+  TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,7 +17,6 @@ import { useConnections } from '@/contexts/ConnectionsContext';
 import { fetchSessionCountForConnection, fetchMeetingCountForConnection, getUniqueTypes, filterByType } from '@/services/dataService';
 import { Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ConnectionsScreen() {
   const router = useRouter();
@@ -29,7 +27,6 @@ export default function ConnectionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [connectionCounts, setConnectionCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     filterAndSearchConnections();
@@ -103,9 +100,9 @@ export default function ConnectionsScreen() {
   const favoriteCount = connections.filter(c => c.isFavorite).length;
   const types = getUniqueTypes(connections);
 
-  return (
-    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}> 
-      <StatusBar style="dark" backgroundColor="#fff" />
+  // Header, filter, and search are now outside the FlatList
+  const renderHeader = () => (
+    <>
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
@@ -155,46 +152,61 @@ export default function ConnectionsScreen() {
           />
         </View>
       </View>
-      <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} style={{ backgroundColor: '#f5f7fa' }}>
-        {filteredConnections.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Heart size={64} color="#ccc" />
-            <Text style={styles.emptyTitle}>
-              {searchQuery.trim() 
-                ? 'No Results Found'
-                : showFavorites ? 'No Favorites Yet' : 'No Connections'
-              }
-            </Text>
-            <Text style={styles.emptySubtitle}>
-              {searchQuery.trim()
-                ? 'Try adjusting your search terms'
-                : showFavorites 
-                  ? 'Tap the heart icon on connections to add them to your favorites'
-                  : 'Connections will appear here when available'
-              }
-            </Text>
-            {showFavorites && (
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => setShowFavorites(false)}
-              >
-                <Text style={styles.backButtonText}>View All Connections</Text>
-              </TouchableOpacity>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}> 
+      <StatusBar style="dark" backgroundColor="#fff" />
+      {/* Fixed header, filter, and search */}
+      {renderHeader()}
+      {/* Only the cards scroll */}
+      {filteredConnections.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Heart size={64} color="#ccc" />
+          <Text style={styles.emptyTitle}>
+            {searchQuery.trim() 
+              ? 'No Results Found'
+              : showFavorites ? 'No Favorites Yet' : 'No Connections'
+            }
+          </Text>
+          <Text style={styles.emptySubtitle}>
+            {searchQuery.trim()
+              ? 'Try adjusting your search terms'
+              : showFavorites 
+                ? 'Tap the heart icon on connections to add them to your favorites'
+                : 'Connections will appear here when available'
+            }
+          </Text>
+          {showFavorites && (
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => setShowFavorites(false)}
+            >
+              <Text style={styles.backButtonText}>View All Connections</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : (
+        <View style={styles.listWrapper}>
+          <FlatList
+            data={filteredConnections}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ConnectionCard
+                connection={item}
+                sessionCount={connectionCounts[item.id]?.sessions}
+                meetingCount={connectionCounts[item.id]?.meetings}
+                onPress={() => handleConnectionPress(item)}
+                onToggleFavorite={() => handleToggleFavorite(item.id)}
+              />
             )}
-          </View>
-        ) : (
-          filteredConnections.map(item => (
-            <ConnectionCard
-              key={item.id}
-              connection={item}
-              sessionCount={connectionCounts[item.id]?.sessions}
-              meetingCount={connectionCounts[item.id]?.meetings}
-              onPress={() => handleConnectionPress(item)}
-              onToggleFavorite={() => handleToggleFavorite(item.id)}
-            />
-          ))
-        )}
-      </ScrollView>
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            style={{ flex: 1 }}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
