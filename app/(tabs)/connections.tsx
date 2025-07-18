@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart, Search } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
@@ -27,7 +27,6 @@ export default function ConnectionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [connectionCounts, setConnectionCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     filterAndSearchConnections();
@@ -157,7 +156,7 @@ export default function ConnectionsScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}> 
+    <SafeAreaView style={styles.container}> 
       <StatusBar style="dark" backgroundColor="#fff" />
       {/* Fixed header, filter, and search */}
       {renderHeader()}
@@ -218,15 +217,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f7fa', // always light grey
   },
   header: {
-    padding: 20,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    zIndex: 2,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 20,
   },
   title: {
     fontSize: 28,
