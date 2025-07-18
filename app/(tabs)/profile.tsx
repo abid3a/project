@@ -319,7 +319,7 @@ export default function ProfileScreen() {
           <SafeAreaView style={styles.container}>
             <View style={styles.header}>
               <Text style={styles.title}>Reports</Text>
-              <TouchableOpacity style={styles.closeModalButton} onPress={() => setReportsModalVisible(false)}>
+              <TouchableOpacity style={{ padding: 4 }} onPress={() => setReportsModalVisible(false)}>
                 <X size={24} color="#666" />
               </TouchableOpacity>
             </View>
