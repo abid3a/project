@@ -3,11 +3,11 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  ScrollView, 
+  FlatList, 
   TouchableOpacity,
   TextInput
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart, Search } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
@@ -27,7 +27,6 @@ export default function ConnectionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [connectionCounts, setConnectionCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
-  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     filterAndSearchConnections();
@@ -101,34 +100,38 @@ export default function ConnectionsScreen() {
   const favoriteCount = connections.filter(c => c.isFavorite).length;
   const types = getUniqueTypes(connections);
 
-  return (
-    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}> 
-      <StatusBar style="dark" backgroundColor="#fff" />
+  // Header, filter, and search are now outside the FlatList
+  const renderHeader = () => (
+    <>
       <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.title}>{showFavorites ? 'Favorite Connections' : 'Connections'}</Text>
-          <Text style={styles.subtitle}>
-            {showFavorites 
-              ? `${filteredConnections.length} favorite connection${filteredConnections.length !== 1 ? 's' : ''}`
-              : `${filteredConnections.length} connection${filteredConnections.length !== 1 ? 's' : ''}`
-            }
-          </Text>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.title}>
+              {showFavorites ? 'Favorite Connections' : 'Connections'}
+            </Text>
+            <Text style={styles.subtitle}>
+              {showFavorites 
+                ? `${filteredConnections.length} favorite connection${filteredConnections.length !== 1 ? 's' : ''}`
+                : `${filteredConnections.length} connection${filteredConnections.length !== 1 ? 's' : ''}`
+              }
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.favoriteButton, showFavorites && styles.favoriteButtonActive]}
+            onPress={() => setShowFavorites(!showFavorites)}
+          >
+            <Heart 
+              size={32}
+              color="#1976d2"
+              fill={showFavorites ? "#1976d2" : "none"}
+            />
+            {favoriteCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{favoriteCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          style={[styles.favoriteButton, showFavorites && styles.favoriteButtonActive]}
-          onPress={() => setShowFavorites(!showFavorites)}
-        >
-          <Heart 
-            size={32}
-            color="#1976d2"
-            fill={showFavorites ? "#1976d2" : "none"}
-          />
-          {favoriteCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{favoriteCount}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
       </View>
       <FilterBar
         types={types}
@@ -149,6 +152,15 @@ export default function ConnectionsScreen() {
           />
         </View>
       </View>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}> 
+      <StatusBar style="dark" backgroundColor="#fff" />
+      {/* Fixed header, filter, and search */}
+      {renderHeader()}
+      {/* Only the cards scroll */}
       {filteredConnections.length === 0 ? (
         <View style={styles.emptyState}>
           <Heart size={64} color="#ccc" />
@@ -176,22 +188,24 @@ export default function ConnectionsScreen() {
           )}
         </View>
       ) : (
-        <ScrollView
-          style={{ backgroundColor: '#f5f7fa' }}
-          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 80 }]}
-          showsVerticalScrollIndicator={false}
-        >
-          {filteredConnections.map((item) => (
-            <ConnectionCard
-              key={item.id}
-              connection={item}
-              sessionCount={connectionCounts[item.id]?.sessions}
-              meetingCount={connectionCounts[item.id]?.meetings}
-              onPress={() => handleConnectionPress(item)}
-              onToggleFavorite={() => handleToggleFavorite(item.id)}
-            />
-          ))}
-        </ScrollView>
+        <View style={styles.listWrapper}>
+          <FlatList
+            data={filteredConnections}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ConnectionCard
+                connection={item}
+                sessionCount={connectionCounts[item.id]?.sessions}
+                meetingCount={connectionCounts[item.id]?.meetings}
+                onPress={() => handleConnectionPress(item)}
+                onToggleFavorite={() => handleToggleFavorite(item.id)}
+              />
+            )}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+            style={{ flex: 1 }}
+          />
+        </View>
       )}
     </SafeAreaView>
   );
@@ -207,10 +221,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
     zIndex: 2,
-    padding: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
   },
   title: {
     fontSize: 28,
