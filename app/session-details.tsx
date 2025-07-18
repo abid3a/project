@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X, Calendar, Clock, MapPin, Users } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { dataService, fetchSessions, fetchConnections, fetchSessionMentors, fetchMentorConnections, fetchSessionCountForConnection, fetchMeetingCountForConnection } from '@/services/dataService';
+import { fetchSessions, fetchConnections, fetchSessionMentors, fetchMentorConnections, fetchSessionCountForConnection, fetchMeetingCountForConnection } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Session, Connection } from '@/types';
 
@@ -21,9 +21,10 @@ export default function SessionDetailsScreen() {
 
   useEffect(() => {
     const loadSessionAndMentors = async () => {
-      if (!sessionId || !user) return;
+      if (!sessionId || !user || !user.cohort) return;
       try {
-        const sessions = await fetchSessions(user.companyUID);
+        const normalizedCohort = user.cohort.trim().toLowerCase();
+        const sessions = await fetchSessions(normalizedCohort);
         const foundSession = (sessions || []).find((s: any) => s.id === sessionId);
         if (foundSession) {
           const mappedSession = {
@@ -36,6 +37,7 @@ export default function SessionDetailsScreen() {
             location: foundSession.location,
             description: foundSession.description,
             companyUID: foundSession.company_uid,
+            cohort: foundSession.cohort, // <-- Add this line
           };
           setSession(mappedSession);
           // Fetch mentor IDs from join table, then fetch mentor details

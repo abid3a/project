@@ -10,6 +10,7 @@ export interface User {
   role: 'Admin' | 'User';
   createdAt: Date;
   linkedinUrl?: string;
+  cohort?: string;
 }
 
 export interface Session {
@@ -22,6 +23,7 @@ export interface Session {
   description: string;
   companyUID: string;
   mentorIds: string[];
+  cohort?: string;
 }
 
 export interface Meeting {

@@ -7,7 +7,7 @@ import { SessionCard } from '@/components/SessionCard';
 import { MeetingCard } from '@/components/MeetingCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { dataService, fetchNotesForConnection, addNote as addNoteSupabase, editNote as editNoteSupabase, deleteNote as deleteNoteSupabase, fetchMeetingsForConnection, fetchSessionsForConnection, fetchSessions, mapSessionFromSupabase, fetchSessionMentors, fetchMeetingAttendees, fetchSessionsAttendingForConnection } from '@/services/dataService';
+import { fetchNotesForConnection, addNote as addNoteSupabase, editNote as editNoteSupabase, deleteNote as deleteNoteSupabase, fetchMeetingsForConnection, fetchSessionsForConnection, fetchSessions, mapSessionFromSupabase, fetchSessionMentors, fetchMeetingAttendees, fetchSessionsAttendingForConnection } from '@/services/dataService';
 import { supabase } from '@/services/supabaseClient';
 import { Connection, Session, Meeting, Note } from '@/types';
 import { StatusBar } from 'expo-status-bar';
@@ -43,11 +43,12 @@ export default function ConnectionDetailsScreen() {
           fetchSessionsAttendingForConnection(foundConnection.id) // attendee
         ]).then(async ([mentorSessionIds, attendeeSessionIds]) => {
           const allSessionIds = Array.from(new Set([...mentorSessionIds, ...attendeeSessionIds].map(String)));
-          if (!allSessionIds.length) {
+          if (!allSessionIds.length || !user.cohort) {
             setLinkedSessions([]);
             return;
           }
-          const allSessions = await fetchSessions(user.companyUID);
+          const normalizedCohort = user.cohort.trim().toLowerCase();
+          const allSessions = await fetchSessions(normalizedCohort);
           const mapped = (allSessions || []).map(mapSessionFromSupabase);
           const filteredSessions = mapped.filter((s: any) => allSessionIds.includes(String(s.id)));
           // Fetch mentorIds for each session
@@ -287,12 +288,12 @@ export default function ConnectionDetailsScreen() {
           )}
           {notes
             .slice()
-            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
             .map((note) => (
               <TouchableOpacity key={note.id} style={styles.noteCard} onPress={() => openEditNoteModal(note)}>
                 <View style={styles.noteCardHeader}>
                   <Text style={styles.noteTopic}>{note.topic}</Text>
-                  <Text style={styles.noteDate}>{note.created_at ? new Date(note.created_at).toLocaleDateString() : 'N/A'}</Text>
+                  <Text style={styles.noteDate}>{note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'N/A'}</Text>
                 </View>
                 <Text style={styles.noteContent} numberOfLines={2}>{note.content}</Text>
               </TouchableOpacity>

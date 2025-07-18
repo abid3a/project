@@ -18,6 +18,7 @@ class AuthService {
         companyUID: user.company_uid,
         linkedinUrl: user.linkedin_url,
         createdAt: user.created_at,
+        cohort: user.cohort, // <-- Add this line
       };
       this.currentUser = mapped;
       return mapped;
@@ -39,13 +40,14 @@ class AuthService {
       company_uid: userData.companyUID,
       linkedin_url: userData.linkedinUrl,
       created_at: new Date().toISOString(),
+      cohort: userData.cohort, // <-- Add this line
     };
     // Remove camelCase fields
-    delete newUser.firstName;
-    delete newUser.lastName;
-    delete newUser.companyName;
-    delete newUser.companyUID;
-    delete newUser.linkedinUrl;
+    delete (newUser as any).firstName;
+    delete (newUser as any).lastName;
+    delete (newUser as any).companyName;
+    delete (newUser as any).companyUID;
+    delete (newUser as any).linkedinUrl;
     const { data, error } = await supabase.from('users').insert([newUser]).select().single();
     if (error) throw error;
     // Map snake_case to camelCase
@@ -57,6 +59,7 @@ class AuthService {
       companyUID: data.company_uid,
       linkedinUrl: data.linkedin_url,
       createdAt: data.created_at,
+      cohort: data.cohort, // <-- Add this line
     };
     this.currentUser = mapped;
     return mapped;
@@ -80,6 +83,7 @@ class AuthService {
       companyUID: user.company_uid,
       linkedinUrl: user.linkedin_url,
       createdAt: user.created_at,
+      cohort: user.cohort, // <-- Add this line
     }));
   }
 }

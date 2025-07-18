@@ -57,13 +57,14 @@ export default function SessionsScreen() {
       setSessions([]);
       return;
     }
-    const companyUID = user.role === 'User' ? user.companyUID : undefined;
-    if (!companyUID) {
+    const cohort = user.cohort;
+    if (!cohort) {
       setSessions([]);
       return;
     }
     try {
-      const data = await fetchSessions(companyUID);
+      const normalizedCohort = cohort.trim().toLowerCase();
+      const data = await fetchSessions(normalizedCohort);
       // Map snake_case to camelCase and parse date
       const mapped = (data || []).map((session: any) => ({
         ...session,
@@ -76,6 +77,7 @@ export default function SessionsScreen() {
         description: session.description,
         companyUID: session.company_uid,
         mentorIds: session.mentor_ids || [],
+        cohort: session.cohort, // <-- Add this line
       }));
       setSessions(mapped);
     } catch (error) {

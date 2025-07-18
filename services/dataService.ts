@@ -20,7 +20,7 @@ export async function fetchNotes(companyUID: string) {
     .select('*')
     .eq('company_uid', companyUID);
   if (error) throw error;
-  return data;
+  return (data || []).map(mapNoteFromSupabase);
 }
 
 // Fetch all meetings for a given company_uid from Supabase
@@ -110,7 +110,7 @@ export async function fetchNotesForConnection(companyUID: string, connectionId: 
     .eq('company_uid', companyUID)
     .eq('connection_id', connectionId);
   if (error) throw error;
-  return data;
+  return (data || []).map(mapNoteFromSupabase);
 }
 
 // Add a new note for a connection and company (id is now auto-generated)
@@ -121,7 +121,7 @@ export async function addNote({ topic, content, company_uid, connection_id }: { 
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return mapNoteFromSupabase(data);
 }
 
 // Edit a note by id
@@ -133,7 +133,7 @@ export async function editNote(noteId: string, updates: { topic?: string; conten
     .select()
     .single();
   if (error) throw error;
-  return data;
+  return mapNoteFromSupabase(data);
 }
 
 // Delete a note by id (soft delete: set deleted=true)
@@ -168,12 +168,13 @@ export async function fetchMeetingsForConnection(connectionId: string) {
   return (data || []).map(row => row.meeting_id);
 }
 
-// Fetch all sessions for a given company_uid from Supabase
-export async function fetchSessions(companyUID: string) {
+// Fetch all sessions for a given cohort from Supabase
+export async function fetchSessions(cohort: string) {
+  const normalizedCohort = cohort.trim().toLowerCase();
   const { data, error } = await supabase
     .from('sessions')
     .select('*')
-    .eq('company_uid', companyUID);
+    .ilike('cohort', normalizedCohort);
   if (error) throw error;
   return data;
 }
@@ -249,6 +250,19 @@ export function mapSessionFromSupabase(row: any): Session {
     description: row.description,
     companyUID: row.company_uid,
     mentorIds: [], // Not used, but required by type
+    cohort: row.cohort, // <-- Add this line
+  };
+}
+
+// Helper to map Supabase note row to Note type
+export function mapNoteFromSupabase(row: any): Note {
+  return {
+    id: row.id,
+    connectionId: row.connection_id,
+    topic: row.topic,
+    content: row.content,
+    createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+    companyUID: row.company_uid,
   };
 }
 
