@@ -218,16 +218,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f7fa', // always light grey
   },
   header: {
+    padding: 20,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
-    zIndex: 2,
   },
   headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
   },
   title: {
     fontSize: 28,
