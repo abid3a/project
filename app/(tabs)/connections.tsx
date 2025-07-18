@@ -101,38 +101,17 @@ export default function ConnectionsScreen() {
   const favoriteCount = connections.filter(c => c.isFavorite).length;
   const types = getUniqueTypes(connections);
 
-  // Header, filter, and search are now outside the FlatList
-  const renderHeader = () => (
-    <>
+  return (
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}> 
+      <StatusBar style="dark" backgroundColor="#fff" />
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.title}>
-              {showFavorites ? 'Favorite Connections' : 'Connections'}
-            </Text>
-            <Text style={styles.subtitle}>
-              {showFavorites 
-                ? `${filteredConnections.length} favorite connection${filteredConnections.length !== 1 ? 's' : ''}`
-                : `${filteredConnections.length} connection${filteredConnections.length !== 1 ? 's' : ''}`
-              }
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.favoriteButton, showFavorites && styles.favoriteButtonActive]}
-            onPress={() => setShowFavorites(!showFavorites)}
-          >
-            <Heart 
-              size={32}
-              color="#1976d2"
-              fill={showFavorites ? "#1976d2" : "none"}
-            />
-            {favoriteCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{favoriteCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.title}>{showFavorites ? 'Favorite Connections' : 'Connections'}</Text>
+        <Text style={styles.subtitle}>
+          {showFavorites 
+            ? `${filteredConnections.length} favorite connection${filteredConnections.length !== 1 ? 's' : ''}`
+            : `${filteredConnections.length} connection${filteredConnections.length !== 1 ? 's' : ''}`
+          }
+        </Text>
       </View>
       <FilterBar
         types={types}
@@ -153,15 +132,6 @@ export default function ConnectionsScreen() {
           />
         </View>
       </View>
-    </>
-  );
-
-  return (
-    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}> 
-      <StatusBar style="dark" backgroundColor="#fff" />
-      {/* Fixed header, filter, and search */}
-      {renderHeader()}
-      {/* Only the cards scroll */}
       {filteredConnections.length === 0 ? (
         <View style={styles.emptyState}>
           <Heart size={64} color="#ccc" />
@@ -190,7 +160,7 @@ export default function ConnectionsScreen() {
         </View>
       ) : (
         <ScrollView
-          style={styles.listWrapper}
+          style={{ backgroundColor: '#f5f7fa' }}
           contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 80 }]}
           showsVerticalScrollIndicator={false}
         >
