@@ -3,11 +3,11 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  FlatList, 
+  ScrollView, 
   TouchableOpacity,
   TextInput
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Heart, Search } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
@@ -27,6 +27,7 @@ export default function ConnectionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [connectionCounts, setConnectionCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     filterAndSearchConnections();
@@ -156,7 +157,7 @@ export default function ConnectionsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}> 
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}> 
       <StatusBar style="dark" backgroundColor="#fff" />
       {/* Fixed header, filter, and search */}
       {renderHeader()}
@@ -188,24 +189,22 @@ export default function ConnectionsScreen() {
           )}
         </View>
       ) : (
-        <View style={styles.listWrapper}>
-          <FlatList
-            data={filteredConnections}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <ConnectionCard
-                connection={item}
-                sessionCount={connectionCounts[item.id]?.sessions}
-                meetingCount={connectionCounts[item.id]?.meetings}
-                onPress={() => handleConnectionPress(item)}
-                onToggleFavorite={() => handleToggleFavorite(item.id)}
-              />
-            )}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-            style={{ flex: 1 }}
-          />
-        </View>
+        <ScrollView
+          style={styles.listWrapper}
+          contentContainerStyle={[styles.listContent, { paddingBottom: insets.bottom + 80 }]}
+          showsVerticalScrollIndicator={false}
+        >
+          {filteredConnections.map((item) => (
+            <ConnectionCard
+              key={item.id}
+              connection={item}
+              sessionCount={connectionCounts[item.id]?.sessions}
+              meetingCount={connectionCounts[item.id]?.meetings}
+              onPress={() => handleConnectionPress(item)}
+              onToggleFavorite={() => handleToggleFavorite(item.id)}
+            />
+          ))}
+        </ScrollView>
       )}
     </SafeAreaView>
   );
