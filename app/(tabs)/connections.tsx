@@ -34,7 +34,7 @@ export default function ConnectionsScreen() {
   const [showFavorites, setShowFavorites] = useState(false);
   const [connectionCounts, setConnectionCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
 
-  // 1) Filter & search
+  // 1) filter & search
   useEffect(() => {
     let filtered = showFavorites
       ? connections.filter(c => c.isFavorite)
@@ -67,7 +67,7 @@ export default function ConnectionsScreen() {
     setFilteredConnections(filtered);
   }, [connections, showFavorites, searchQuery, selectedType]);
 
-  // 2) Fetch session & meeting counts
+  // 2) fetch counts
   useEffect(() => {
     async function fetchCounts() {
       const counts: Record<string, { sessions: number; meetings: number }> = {};
@@ -96,7 +96,7 @@ export default function ConnectionsScreen() {
 
   return (
     <>
-      {/* only pad top for notch/status bar */}
+      {/* top-safe-area for header */}
       <SafeAreaView edges={['top']} style={styles.safeTop}>
         <StatusBar style="dark" backgroundColor="#fff" />
         <View style={styles.header}>
@@ -107,7 +107,7 @@ export default function ConnectionsScreen() {
         </View>
       </SafeAreaView>
 
-      {/* rest fills to bottom */}
+      {/* main content */}
       <View style={styles.container}>
         <FilterBar
           types={types}
@@ -231,7 +231,12 @@ const styles = StyleSheet.create({
   cardWrapper: {
     marginHorizontal: 16,
     marginBottom: 12,
+
+    // ↓↓↓ MATCH THESE to your MeetingCard dimensions ↓↓↓
+    height: 120,      // ← replace 120 with your MeetingCard's height
+    width: '100%',    // if your MeetingCard is full-width minus margins
   },
+
   emptyState: {
     flex: 1,
     justifyContent: 'center',
