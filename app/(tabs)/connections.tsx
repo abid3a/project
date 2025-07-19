@@ -28,13 +28,16 @@ export default function ConnectionsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { connections, toggleFavorite } = useConnections();
+
   const [filteredConnections, setFilteredConnections] = useState<Connection[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
-  const [connectionCounts, setConnectionCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
+  const [connectionCounts, setConnectionCounts] = useState<
+    Record<string, { sessions: number; meetings: number }>
+  >({});
 
-  // 1) filter & search
+  // 1) Filter & search
   useEffect(() => {
     let filtered = showFavorites
       ? connections.filter(c => c.isFavorite)
@@ -58,6 +61,7 @@ export default function ConnectionsScreen() {
       });
     }
 
+    // sort
     filtered = filtered.slice().sort((a, b) => {
       const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
       const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
@@ -67,12 +71,12 @@ export default function ConnectionsScreen() {
     setFilteredConnections(filtered);
   }, [connections, showFavorites, searchQuery, selectedType]);
 
-  // 2) fetch counts
+  // 2) Fetch counts
   useEffect(() => {
     async function fetchCounts() {
       const counts: Record<string, { sessions: number; meetings: number }> = {};
       await Promise.all(
-        filteredConnections.map(async conn => {
+        filteredConnections.map(async (conn) => {
           let sessions = 0;
           if (user?.cohort) {
             const r = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
@@ -96,18 +100,19 @@ export default function ConnectionsScreen() {
 
   return (
     <>
-      {/* top-safe-area for header */}
+      {/* top-safe-area only for the header */}
       <SafeAreaView edges={['top']} style={styles.safeTop}>
         <StatusBar style="dark" backgroundColor="#fff" />
         <View style={styles.header}>
           <Text style={styles.title}>Connections</Text>
           <Text style={styles.subtitle}>
-            {filteredConnections.length} connection{filteredConnections.length !== 1 ? 's' : ''}
+            {filteredConnections.length} connection
+            {filteredConnections.length !== 1 ? 's' : ''}
           </Text>
         </View>
       </SafeAreaView>
 
-      {/* main content */}
+      {/* rest of app, fills to bottom */}
       <View style={styles.container}>
         <FilterBar
           types={types}
@@ -149,20 +154,19 @@ export default function ConnectionsScreen() {
             </View>
           ) : (
             filteredConnections.map(conn => (
-              <View key={conn.id} style={styles.cardWrapper}>
-                <ConnectionCard
-                  connection={conn}
-                  sessionCount={connectionCounts[conn.id]?.sessions ?? 0}
-                  meetingCount={connectionCounts[conn.id]?.meetings ?? 0}
-                  onPress={() =>
-                    router.push({
-                      pathname: '/connection-details',
-                      params: { connectionId: conn.id }
-                    })
-                  }
-                  onToggleFavorite={() => toggleFavorite(conn.id)}
-                />
-              </View>
+              <ConnectionCard
+                key={conn.id}
+                connection={conn}
+                sessionCount={connectionCounts[conn.id]?.sessions ?? 0}
+                meetingCount={connectionCounts[conn.id]?.meetings ?? 0}
+                onPress={() =>
+                  router.push({
+                    pathname: '/connection-details',
+                    params: { connectionId: conn.id }
+                  })
+                }
+                onToggleFavorite={() => toggleFavorite(conn.id)}
+              />
             ))
           )}
         </ScrollView>
@@ -226,17 +230,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 20,
+    paddingBottom: 20, // adjust as you like
   },
-  cardWrapper: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-
-    // ↓↓↓ MATCH THESE to your MeetingCard dimensions ↓↓↓
-    height: 120,      // ← replace 120 with your MeetingCard's height
-    width: '100%',    // if your MeetingCard is full-width minus margins
-  },
-
   emptyState: {
     flex: 1,
     justifyContent: 'center',
