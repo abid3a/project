@@ -146,7 +146,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#fff', paddingBottom: insets.bottom }]}> 
+    <SafeAreaView style={[styles.container, { backgroundColor: '#fff' }]}> 
       <StatusBar style="dark" backgroundColor="#fff" />
       <View style={styles.header}>
         <Text style={styles.title}>Profile</Text>
