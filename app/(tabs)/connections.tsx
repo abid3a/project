@@ -160,7 +160,7 @@ export default function ConnectionsScreen() {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#fff' }]}> 
+    <SafeAreaView style={styles.container}> 
       <StatusBar style="dark" backgroundColor="#fff" />
       {/* Fixed header, filter, and search */}
       {renderHeader()}
