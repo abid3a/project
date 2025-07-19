@@ -1,12 +1,10 @@
-```tsx
-// connections.tsx
+// app/(tabs)/connections.tsx
 
 import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   TextInput,
   ScrollView
 } from 'react-native';
@@ -29,7 +27,7 @@ import { StatusBar } from 'expo-status-bar';
 export default function ConnectionsScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { connections, toggleFavorite, reloadConnections } = useConnections();
+  const { connections, toggleFavorite } = useConnections();
   const [filteredConnections, setFilteredConnections] = useState<Connection[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,12 +37,12 @@ export default function ConnectionsScreen() {
   >({});
   const insets = useSafeAreaInsets();
 
-  // re-filter whenever dependencies change
+  // Re-filter whenever dependencies change
   useEffect(() => {
     filterAndSearchConnections();
   }, [connections, showFavorites, searchQuery, selectedType]);
 
-  // fetch counts for sessions & meetings
+  // Fetch session & meeting counts
   useEffect(() => {
     async function fetchCounts() {
       const counts: Record<string, { sessions: number; meetings: number }> = {};
@@ -52,11 +50,8 @@ export default function ConnectionsScreen() {
         filteredConnections.map(async (conn) => {
           let sessions = 0;
           if (user && user.cohort) {
-            const result = await fetchSessionCountForConnectionAndCohort(
-              conn.id,
-              user.cohort
-            );
-            sessions = typeof result === 'number' ? result : 0;
+            const res = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
+            sessions = typeof res === 'number' ? res : 0;
           }
           const meetings = await fetchMeetingCountForConnection(conn.id);
           counts[conn.id] = { sessions, meetings };
@@ -64,6 +59,7 @@ export default function ConnectionsScreen() {
       );
       setConnectionCounts(counts);
     }
+
     if (filteredConnections.length > 0) {
       fetchCounts();
     } else {
@@ -73,7 +69,7 @@ export default function ConnectionsScreen() {
 
   function filterAndSearchConnections() {
     let filtered = showFavorites
-      ? connections.filter((c) => c.isFavorite)
+      ? connections.filter(c => c.isFavorite)
       : connections;
 
     if (selectedType) {
@@ -82,17 +78,19 @@ export default function ConnectionsScreen() {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter((c) =>
-        `${c.firstName} ${c.lastName}`
-          .toLowerCase()
-          .includes(q) ||
-        c.role.toLowerCase().includes(q) ||
-        c.type.toLowerCase().includes(q) ||
-        c.organization.toLowerCase().includes(q) ||
-        c.bio.toLowerCase().includes(q)
-      );
+      filtered = filtered.filter(c => {
+        const fullName = `${c.firstName} ${c.lastName}`.toLowerCase();
+        return (
+          fullName.includes(q) ||
+          c.role.toLowerCase().includes(q) ||
+          c.type.toLowerCase().includes(q) ||
+          c.organization.toLowerCase().includes(q) ||
+          c.bio.toLowerCase().includes(q)
+        );
+      });
     }
 
+    // sort alphabetically
     filtered = filtered.slice().sort((a, b) => {
       const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
       const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
@@ -101,16 +99,6 @@ export default function ConnectionsScreen() {
 
     setFilteredConnections(filtered);
   }
-
-  const handleConnectionPress = (conn: Connection) => {
-    router.push({
-      pathname: '/connection-details',
-      params: { connectionId: conn.id }
-    });
-  };
-
-  const favoriteCount = connections.filter((c) => c.isFavorite).length;
-  const types = getUniqueTypes(connections);
 
   return (
     <SafeAreaView
@@ -121,6 +109,7 @@ export default function ConnectionsScreen() {
     >
       <StatusBar style="dark" backgroundColor="#fff" />
 
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>Connections</Text>
         <Text style={styles.subtitle}>
@@ -129,12 +118,14 @@ export default function ConnectionsScreen() {
         </Text>
       </View>
 
+      {/* Filter bar */}
       <FilterBar
-        types={types}
+        types={getUniqueTypes(connections)}
         selectedType={selectedType}
         onTypeSelect={setSelectedType}
       />
 
+      {/* Search input */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
           <Search size={20} color="#666" style={styles.searchIcon} />
@@ -150,6 +141,7 @@ export default function ConnectionsScreen() {
         </View>
       </View>
 
+      {/* Connections list */}
       <ScrollView
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -168,14 +160,17 @@ export default function ConnectionsScreen() {
             </Text>
           </View>
         ) : (
-          filteredConnections.map((item) => (
+          filteredConnections.map(conn => (
             <ConnectionCard
-              key={item.id}
-              connection={item}
-              sessionCount={connectionCounts[item.id]?.sessions ?? 0}
-              meetingCount={connectionCounts[item.id]?.meetings ?? 0}
-              onPress={() => handleConnectionPress(item)}
-              onToggleFavorite={() => toggleFavorite(item.id)}
+              key={conn.id}
+              connection={conn}
+              sessionCount={connectionCounts[conn.id]?.sessions ?? 0}
+              meetingCount={connectionCounts[conn.id]?.meetings ?? 0}
+              onPress={() => router.push({
+                pathname: '/connection-details',
+                params: { connectionId: conn.id }
+              })}
+              onToggleFavorite={() => toggleFavorite(conn.id)}
             />
           ))
         )}
@@ -185,30 +180,28 @@ export default function ConnectionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
+  container: { flex: 1 },
   header: {
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
+    padding: 20,
     zIndex: 2,
-    padding: 20
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#1a1a1a',
-    marginBottom: 4
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666'
+    color: '#666',
   },
   searchContainer: {
     backgroundColor: '#f5f7fa',
     paddingHorizontal: 16,
-    paddingBottom: 12
+    paddingBottom: 12,
   },
   searchInputContainer: {
     flexDirection: 'row',
@@ -216,43 +209,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     paddingHorizontal: 16,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2
   },
-  searchIcon: {
-    marginRight: 12
-  },
+  searchIcon: { marginRight: 12 },
   searchInput: {
     flex: 1,
     height: 48,
     fontSize: 16,
-    color: '#333'
+    color: '#333',
   },
-  listContent: {
-    paddingBottom: 20
-  },
+  listContent: { paddingBottom: 20 },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40
+    padding: 40,
   },
   emptyTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: '#666',
     marginTop: 16,
-    marginBottom: 8
+    marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 16,
     color: '#888',
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 24
-  }
+    marginBottom: 24,
+  },
 });
-```
