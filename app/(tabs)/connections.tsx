@@ -5,7 +5,8 @@ import {
   StyleSheet, 
   FlatList, 
   TouchableOpacity,
-  TextInput
+  TextInput,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -104,38 +105,14 @@ export default function ConnectionsScreen() {
   const favoriteCount = connections.filter(c => c.isFavorite).length;
   const types = getUniqueTypes(connections);
 
-  // Header, filter, and search are now outside the FlatList
-  const renderHeader = () => (
-    <>
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" backgroundColor="#fff" />
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
-            <Text style={styles.title}>
-              {showFavorites ? 'Favorite Connections' : 'Connections'}
-            </Text>
-            <Text style={styles.subtitle}>
-              {showFavorites 
-                ? `${filteredConnections.length} favorite connection${filteredConnections.length !== 1 ? 's' : ''}`
-                : `${filteredConnections.length} connection${filteredConnections.length !== 1 ? 's' : ''}`
-              }
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.favoriteButton, showFavorites && styles.favoriteButtonActive]}
-            onPress={() => setShowFavorites(!showFavorites)}
-          >
-            <Heart 
-              size={32}
-              color="#1976d2"
-              fill={showFavorites ? "#1976d2" : "none"}
-            />
-            {favoriteCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{favoriteCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.title}>Connections</Text>
+        <Text style={styles.subtitle}>
+          {filteredConnections.length} connection{filteredConnections.length !== 1 ? 's' : ''}
+        </Text>
       </View>
       <FilterBar
         types={types}
@@ -147,7 +124,7 @@ export default function ConnectionsScreen() {
           <Search size={20} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder={showFavorites ? "Search favorites..." : "Search connections..."}
+            placeholder="Search connections..."
             placeholderTextColor="#000"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -156,61 +133,34 @@ export default function ConnectionsScreen() {
           />
         </View>
       </View>
-    </>
-  );
-
-  return (
-    <SafeAreaView style={styles.container}> 
-      <StatusBar style="dark" backgroundColor="#fff" />
-      {/* Fixed header, filter, and search */}
-      {renderHeader()}
-      {/* Only the cards scroll */}
-      {filteredConnections.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Heart size={64} color="#ccc" />
-          <Text style={styles.emptyTitle}>
-            {searchQuery.trim() 
-              ? 'No Results Found'
-              : showFavorites ? 'No Favorites Yet' : 'No Connections'
-            }
-          </Text>
-          <Text style={styles.emptySubtitle}>
-            {searchQuery.trim()
-              ? 'Try adjusting your search terms'
-              : showFavorites 
-                ? 'Tap the heart icon on connections to add them to your favorites'
-                : 'Connections will appear here when available'
-            }
-          </Text>
-          {showFavorites && (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => setShowFavorites(false)}
-            >
-              <Text style={styles.backButtonText}>View All Connections</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      ) : (
-        <View style={styles.listWrapper}>
-          <FlatList
-            data={filteredConnections}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <ConnectionCard
-                connection={item}
-                sessionCount={connectionCounts[item.id]?.sessions ?? 0}
-                meetingCount={connectionCounts[item.id]?.meetings ?? 0}
-                onPress={() => handleConnectionPress(item)}
-                onToggleFavorite={() => handleToggleFavorite(item.id)}
-              />
-            )}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-            style={{ flex: 1 }}
-          />
-        </View>
-      )}
+      <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} style={{ backgroundColor: '#f5f7fa' }}>
+        {filteredConnections.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Heart size={64} color="#ccc" />
+            <Text style={styles.emptyTitle}>
+              {searchQuery.trim() 
+                ? 'No Results Found'
+                : 'No Connections'}
+            </Text>
+            <Text style={styles.emptySubtitle}>
+              {searchQuery.trim()
+                ? 'Try adjusting your search terms'
+                : 'Connections will appear here when available'}
+            </Text>
+          </View>
+        ) : (
+          filteredConnections.map(item => (
+            <ConnectionCard
+              key={item.id}
+              connection={item}
+              sessionCount={connectionCounts[item.id]?.sessions ?? 0}
+              meetingCount={connectionCounts[item.id]?.meetings ?? 0}
+              onPress={() => handleConnectionPress(item)}
+              onToggleFavorite={() => handleToggleFavorite(item.id)}
+            />
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -225,12 +175,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
     zIndex: 2,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
+    padding: 20, // Match Meetings
   },
   title: {
     fontSize: 28,
