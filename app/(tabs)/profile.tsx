@@ -10,6 +10,7 @@ import { authService } from '@/services/authService';
 import { fetchReports } from '@/services/dataService';
 import { ScrollView, Modal, TextInput } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -18,10 +19,14 @@ export default function ProfileScreen() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (user?.role === 'Admin' && adminModalVisible) {
-      setUsers(authService.getAllUsers());
+      (async () => {
+        const users = await authService.getAllUsers();
+        setUsers(users);
+      })();
     }
   }, [user, adminModalVisible]);
 
@@ -141,7 +146,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}> 
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}> 
       <StatusBar style="dark" backgroundColor="#fff" />
       <View style={styles.header}>
         <Text style={styles.title}>Profile</Text>
