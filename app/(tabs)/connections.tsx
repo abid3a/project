@@ -96,7 +96,7 @@ export default function ConnectionsScreen() {
     }
   }, [filteredConnections, user]);
 
-  const types = getUniqueTypes(connections);
+  const types = getUniqueTypes(connections).filter(t => t && t.trim() !== '');
 
   return (
     <>

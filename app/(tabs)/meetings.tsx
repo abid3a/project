@@ -130,7 +130,7 @@ export default function MeetingsScreen() {
     });
   };
 
-  const types = getUniqueTypes(meetings);
+  const types = getUniqueTypes(meetings).filter(t => t && t.trim() !== '');
 
   // Section meetings
   const today = new Date();
