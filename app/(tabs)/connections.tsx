@@ -17,6 +17,7 @@ import { useConnections } from '@/contexts/ConnectionsContext';
 import { fetchSessionCountForConnectionAndCohort, fetchMeetingCountForConnection, getUniqueTypes, filterByType } from '@/services/dataService';
 import { Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ConnectionsScreen() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function ConnectionsScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavorites, setShowFavorites] = useState(false);
   const [connectionCounts, setConnectionCounts] = useState<Record<string, { sessions: number; meetings: number }>>({});
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     filterAndSearchConnections();
@@ -37,9 +39,10 @@ export default function ConnectionsScreen() {
     async function fetchCounts() {
       const counts: Record<string, { sessions: number; meetings: number }> = {};
       await Promise.all(filteredConnections.map(async (conn) => {
-        let sessions = undefined;
+        let sessions = 0;
         if (user && user.cohort) {
-          sessions = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
+          const result = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
+          sessions = typeof result === 'number' ? result : 0;
         }
         const meetings = await fetchMeetingCountForConnection(conn.id);
         counts[conn.id] = { sessions, meetings };
@@ -157,7 +160,7 @@ export default function ConnectionsScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container}> 
+    <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}> 
       <StatusBar style="dark" backgroundColor="#fff" />
       {/* Fixed header, filter, and search */}
       {renderHeader()}
@@ -196,8 +199,8 @@ export default function ConnectionsScreen() {
             renderItem={({ item }) => (
               <ConnectionCard
                 connection={item}
-                sessionCount={connectionCounts[item.id]?.sessions}
-                meetingCount={connectionCounts[item.id]?.meetings}
+                sessionCount={connectionCounts[item.id]?.sessions ?? 0}
+                meetingCount={connectionCounts[item.id]?.meetings ?? 0}
                 onPress={() => handleConnectionPress(item)}
                 onToggleFavorite={() => handleToggleFavorite(item.id)}
               />
