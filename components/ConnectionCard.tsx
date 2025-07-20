@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
   role: {
     fontSize: 13,
-    color: '#757575',
+    color: '#000',
     marginRight: 8,
     flexShrink: 1,
     flexGrow: 1,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   organization: {
     fontSize: 12,
-    color: '#bdbdbd',
+    color: '#000',
     marginLeft: 4,
     maxWidth: 120,
   },
@@ -221,12 +221,12 @@ const styles = StyleSheet.create({
   },
   statText: {
     fontSize: 12,
-    color: '#7b8794',
+    color: '#000',
     fontWeight: '500',
   },
   statDot: {
     fontSize: 14,
-    color: '#cbd2d9',
+    color: '#000',
     marginHorizontal: 6,
     fontWeight: 'bold',
   },

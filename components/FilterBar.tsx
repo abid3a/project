@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   filterText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
+    color: '#000',
   },
   selectedText: {
     color: '#fff',

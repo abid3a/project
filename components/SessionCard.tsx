@@ -152,12 +152,12 @@ const styles = StyleSheet.create({
   },
   detailText: {
     fontSize: 14,
-    color: '#666',
+    color: '#000',
     marginLeft: 8,
   },
   description: {
     fontSize: 14,
-    color: '#888',
+    color: '#000',
     lineHeight: 20,
   },
 });

@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#000',
   },
   listContent: {
     paddingBottom: 20,
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   sectionCount: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6b7280',
+    color: '#000',
     marginLeft: 8,
   },
   sectionContent: {
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: '#000',
     lineHeight: 24,
     backgroundColor: '#fff',
     padding: 16,

@@ -6,7 +6,8 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  ScrollView
+  ScrollView,
+  TouchableOpacity
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -104,7 +105,19 @@ export default function ConnectionsScreen() {
       <SafeAreaView edges={['top']} style={styles.safeTop}>
         <StatusBar style="dark" backgroundColor="#fff" />
         <View style={styles.header}>
-          <Text style={styles.title}>Connections</Text>
+          <View style={styles.headerTop}>
+            <Text style={styles.title}>Connections</Text>
+            <TouchableOpacity
+              style={styles.heartButton}
+              onPress={() => setShowFavorites(!showFavorites)}
+            >
+              <Heart 
+                size={32} 
+                color={showFavorites ? "#1976d2" : "#bdbdbd"}
+                fill={showFavorites ? "#1976d2" : "none"}
+              />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.subtitle}>
             {filteredConnections.length} connection
             {filteredConnections.length !== 1 ? 's' : ''}
@@ -125,7 +138,7 @@ export default function ConnectionsScreen() {
             <Search size={20} color="#666" style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search connections..."
+              placeholder={showFavorites ? "Search favourites..." : "Search connections..."}
               placeholderTextColor="#000"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -189,6 +202,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  heartButton: {
+    padding: 4,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
@@ -197,7 +219,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#000',
   },
   searchContainer: {
     paddingHorizontal: 16,
@@ -247,7 +269,7 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#888',
+    color: '#000',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 24,
