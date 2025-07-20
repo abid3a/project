@@ -13,7 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 export default function MeetingDetailsScreen() {
   const router = useRouter();
   const { meetingId } = useLocalSearchParams<{ meetingId: string }>();
-  const { connections } = useConnections();
+  const { connections, toggleFavorite } = useConnections();
   const { user } = useAuth();
   
   const [meeting, setMeeting] = useState<Meeting | null>(null);
@@ -157,16 +157,20 @@ export default function MeetingDetailsScreen() {
             <Text style={styles.sectionTitle}>
               Attendee{attendees.length !== 1 ? 's' : ''} ({attendees.length})
             </Text>
-            {attendees.map((attendee) => (
-              <ConnectionCard
-                key={attendee.id}
-                connection={attendee}
-                sessionCount={attendeeCounts[attendee.id]?.sessions}
-                meetingCount={attendeeCounts[attendee.id]?.meetings}
-                onPress={() => handleConnectionPress(attendee)}
-                showFavoriteButton={false}
-              />
-            ))}
+            {attendees.map((attendee) => {
+              const liveAttendee = connections.find(c => c.id === attendee.id) || attendee;
+              return (
+                <ConnectionCard
+                  key={attendee.id}
+                  connection={liveAttendee}
+                  sessionCount={attendeeCounts[attendee.id]?.sessions}
+                  meetingCount={attendeeCounts[attendee.id]?.meetings}
+                  onPress={() => handleConnectionPress(attendee)}
+                  showFavoriteButton={true}
+                  onToggleFavorite={() => toggleFavorite(attendee.id)}
+                />
+              );
+            })}
           </View>
         )}
       </ScrollView>

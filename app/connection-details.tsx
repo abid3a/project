@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Platform, KeyboardAvoidingView, Modal, TouchableWithoutFeedback, Linking, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { X, User, Building, Calendar, Users, Plus, CreditCard as Edit, Trash2, Heart, MoveVertical as MoreVertical } from 'lucide-react-native';
+import { X, User, Building, Calendar, Users, Plus, CreditCard as Edit, Trash2, Heart, MoveVertical as MoreVertical, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { SessionCard } from '@/components/SessionCard';
 import { MeetingCard } from '@/components/MeetingCard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +12,7 @@ import { supabase } from '@/services/supabaseClient';
 import { Connection, Session, Meeting, Note } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 import LinkedinWhiteIcon from '@/components/LinkedinWhiteIcon';
+const linkedinLogo = require('@/assets/images/linkedin_logo.png');
 const defaultAvatar = require('@/assets/images/icon.png');
 
 // Map for local banner images (same as in ConnectionCard)
@@ -41,6 +42,8 @@ export default function ConnectionDetailsScreen() {
   const [editNoteTopic, setEditNoteTopic] = useState('');
   const [editNoteContent, setEditNoteContent] = useState('');
   const [editMode, setEditMode] = useState(false);
+  const [bioExpanded, setBioExpanded] = useState(false);
+  const [bioNeedsExpand, setBioNeedsExpand] = useState(false);
 
   useEffect(() => {
     if (connectionId && user) {
@@ -217,42 +220,46 @@ export default function ConnectionDetailsScreen() {
           <View style={{ position: 'relative' }}>
             {connection.linkedinUrl ? (
               <TouchableOpacity
-                style={styles.linkedinButton}
+                style={styles.linkedinLogoButton}
                 onPress={async () => {
                   const url = connection.linkedinUrl!;
                   try {
                     const supported = await Linking.canOpenURL('linkedin://');
                     if (supported) {
                       const username = url.replace('https://www.linkedin.com/in/', '').replace(/\/$/, '');
+                      // Try to open in LinkedIn app
                       await Linking.openURL(`linkedin://in/${username}`);
                     } else {
+                      // Open in external browser
                       await Linking.openURL(url);
                     }
                   } catch (e) {
+                    // Fallback: open in external browser
                     await Linking.openURL(url);
                   }
                 }}
                 activeOpacity={0.7}
+                accessibilityLabel="Open LinkedIn profile"
               >
-                <LinkedinWhiteIcon size={32} />
+                <Image source={linkedinLogo} style={styles.linkedinLogo} />
               </TouchableOpacity>
             ) : null}
             <View style={styles.profileSection}>
-              <View style={styles.avatar}>
+              <View style={styles.avatarSquare}>
                 {connection.profileImage ? (
                   typeof connection.profileImage === 'number' ? (
-                    <Image source={connection.profileImage} style={{ width: 64, height: 64, borderRadius: 32 }} />
+                    <Image source={connection.profileImage} style={{ width: 64, height: 64, borderRadius: 12 }} />
                   ) : bannerMap[connection.profileImage] ? (
-                    <Image source={bannerMap[connection.profileImage]} style={{ width: 64, height: 64, borderRadius: 32 }} />
+                    <Image source={bannerMap[connection.profileImage]} style={{ width: 64, height: 64, borderRadius: 12 }} />
                   ) : (
                     <Image 
                       source={{ uri: connection.profileImage }} 
-                      style={{ width: 64, height: 64, borderRadius: 32 }} 
+                      style={{ width: 64, height: 64, borderRadius: 12 }} 
                       defaultSource={defaultAvatar} 
                     />
                   )
                 ) : (
-                  <View style={styles.avatarFallback}>
+                  <View style={styles.avatarFallbackSquare}>
                     <User size={32} color="#000" />
                   </View>
                 )}
@@ -260,15 +267,40 @@ export default function ConnectionDetailsScreen() {
               <Text style={styles.connectionName}>
                 {connection.firstName} {connection.lastName}
               </Text>
-              <Text style={styles.connectionRoleCompany}>
-                {connection.role} • {connection.organization}
-              </Text>
+              {connection.role && connection.organization ? (
+                <Text style={styles.connectionRoleCompany}>
+                  {connection.role} | {connection.organization}
+                </Text>
+              ) : connection.role ? (
+                <Text style={styles.connectionRoleCompany}>{connection.role}</Text>
+              ) : connection.organization ? (
+                <Text style={styles.connectionRoleCompany}>{connection.organization}</Text>
+              ) : null}
+              {connection.bio ? (
+                <View style={{ alignItems: 'center', width: '100%', minHeight: 0 }}>
+                  <Text
+                    style={styles.bio}
+                    numberOfLines={bioExpanded ? undefined : 2}
+                    ellipsizeMode="tail"
+                    onTextLayout={e => {
+                      if (e.nativeEvent.lines.length > 2 && !bioNeedsExpand) setBioNeedsExpand(true);
+                    }}
+                  >
+                    {connection.bio}
+                  </Text>
+                  {bioNeedsExpand && (
+                    <TouchableOpacity onPress={() => setBioExpanded(exp => !exp)} style={{ marginTop: 2, marginBottom: 2 }}>
+                      {bioExpanded ? (
+                        <ChevronUp size={20} color="#1976d2" />
+                      ) : (
+                        <ChevronDown size={20} color="#1976d2" />
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ) : null}
             </View>
           </View>
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Bio</Text>
-          <Text style={styles.bio}>{connection.bio}</Text>
         </View>
         {linkedSessions.length > 0 && (
           <View style={styles.card}>
@@ -406,7 +438,16 @@ export default function ConnectionDetailsScreen() {
                     editable={editMode}
                   />
                   <View style={styles.modalButtonRow}>
-                    <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDeleteNote}>
+                    <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={() => {
+                      Alert.alert(
+                        'Delete Note',
+                        'Are you sure you want to delete this note?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Delete', style: 'destructive', onPress: handleDeleteNote },
+                        ]
+                      );
+                    }}>
                       <Text style={styles.buttonText}>DELETE</Text>
                     </TouchableOpacity>
                     {editMode ? (
@@ -470,6 +511,10 @@ const styles = StyleSheet.create({
   },
   cardFirst: {
     marginTop: 16, // Add some top margin for the first card
+    paddingTop: 24, // Keep top padding for visual balance
+    paddingBottom: 8, // Smaller bottom padding for compactness
+    paddingLeft: 24, // Match left padding to right
+    paddingRight: 24, // Match right padding to left
   },
   profileSection: {
     alignItems: 'center',
@@ -491,6 +536,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  avatarSquare: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  avatarFallbackSquare: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   connectionName: {
     fontSize: 24,
@@ -669,5 +732,17 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     opacity: 1, // Ensure full opacity
+  },
+  linkedinLogoButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    zIndex: 2,
+    padding: 4,
+  },
+  linkedinLogo: {
+    width: 32,
+    height: 32,
+    resizeMode: 'contain',
   },
 }); 

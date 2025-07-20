@@ -13,7 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 export default function SessionDetailsScreen() {
   const router = useRouter();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
-  const { connections } = useConnections();
+  const { connections, toggleFavorite } = useConnections();
   const { user } = useAuth();
   
   const [session, setSession] = useState<Session | null>(null);
@@ -186,16 +186,20 @@ export default function SessionDetailsScreen() {
             <Text style={styles.sectionTitle}>
               Mentor{mentors.length !== 1 ? 's' : ''} ({mentors.length})
             </Text>
-            {mentors.map((mentor) => (
-              <ConnectionCard
-                key={mentor.id}
-                connection={mentor}
-                sessionCount={mentorCounts[mentor.id]?.sessions}
-                meetingCount={mentorCounts[mentor.id]?.meetings}
-                onPress={() => handleConnectionPress(mentor)}
-                showFavoriteButton={false}
-              />
-            ))}
+            {mentors.map((mentor) => {
+              const liveMentor = connections.find(c => c.id === mentor.id) || mentor;
+              return (
+                <ConnectionCard
+                  key={mentor.id}
+                  connection={liveMentor}
+                  sessionCount={mentorCounts[mentor.id]?.sessions}
+                  meetingCount={mentorCounts[mentor.id]?.meetings}
+                  onPress={() => handleConnectionPress(mentor)}
+                  showFavoriteButton={true}
+                  onToggleFavorite={() => toggleFavorite(mentor.id)}
+                />
+              );
+            })}
           </View>
         )}
       </ScrollView>
