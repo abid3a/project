@@ -328,3 +328,54 @@ export function getUniqueTypes(items: { type: string }[]): string[] {
 export function filterByType<T extends { type: string }>(items: T[], type: string): T[] {
   return items.filter(item => item.type === type);
 }
+
+// Fetch all sessions for admins (no cohort filter)
+export async function fetchAllSessions() {
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('*');
+  if (error) throw error;
+  return data;
+}
+
+// Fetch all meetings for admins (no company filter)
+export async function fetchAllMeetings() {
+  const { data, error } = await supabase
+    .from('meetings')
+    .select('*');
+  if (error) throw error;
+  return data;
+}
+
+// Fetch all connections for admins (no company filter)
+export async function fetchAllConnections() {
+  const { data, error } = await supabase
+    .from('connections')
+    .select('*');
+  if (error) throw error;
+  return data;
+}
+
+// Get unique cohorts from sessions for admin filtering
+export async function getUniqueCohorts() {
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('cohort')
+    .not('cohort', 'is', null);
+  if (error) throw error;
+  
+  const cohorts = [...new Set((data || []).map(row => row.cohort).filter(Boolean))];
+  return cohorts.sort();
+}
+
+// Get unique company UIDs from meetings for admin filtering
+export async function getUniqueCompanyUIDs() {
+  const { data, error } = await supabase
+    .from('meetings')
+    .select('company_uid')
+    .not('company_uid', 'is', null);
+  if (error) throw error;
+  
+  const companyUIDs = [...new Set((data || []).map(row => row.company_uid).filter(Boolean))];
+  return companyUIDs.sort();
+}

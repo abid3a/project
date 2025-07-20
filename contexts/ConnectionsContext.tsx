@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Connection } from '@/types';
-import { fetchConnections, fetchFavoriteConnectionIds, addFavorite, removeFavorite } from '@/services/dataService';
+import { fetchConnections, fetchAllConnections, fetchFavoriteConnectionIds, addFavorite, removeFavorite } from '@/services/dataService';
 import { useAuth } from './AuthContext';
 
 interface ConnectionsContextType {
@@ -23,12 +23,22 @@ export function ConnectionsProvider({ children }: { children: React.ReactNode })
       setFavoriteIds([]);
       return;
     }
-    const companyUID = user.companyUID;
+    
     try {
-      const [data, favIds] = await Promise.all([
-        fetchConnections(), // No companyUID argument
-        fetchFavoriteConnectionIds(companyUID),
-      ]);
+      let data;
+      let favIds: string[] = [];
+      
+      if (user.role === 'Admin') {
+        // Admin can see all connections
+        data = await fetchAllConnections();
+        // For admin, we'll show all connections but favorites will be company-specific
+        favIds = await fetchFavoriteConnectionIds(user.companyUID);
+      } else {
+        // Regular users see all connections (as per current implementation)
+        data = await fetchConnections();
+        favIds = await fetchFavoriteConnectionIds(user.companyUID);
+      }
+      
       // Map snake_case to camelCase for frontend compatibility
       const mapped = (data || []).map(conn => ({
         ...conn,

@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, SafeAreaView, FlatList } from 'react-native';
 import { GestureHandlerRootView , PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
-import { X, Calendar, Clock, MapPin, Users, Search, ChevronDown, ChevronRight } from 'lucide-react-native';
+import { X, Calendar, Clock, MapPin, Users, Search, ChevronDown, ChevronRight, Filter } from 'lucide-react-native';
 import { SessionCard } from '@/components/SessionCard';
 import FilterBar from '@/components/FilterBar';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { fetchSessions, fetchSessionMentors, getUniqueTypes, filterByType } from '@/services/dataService';
+import { fetchSessions, fetchAllSessions, fetchSessionMentors, getUniqueTypes, filterByType, getUniqueCohorts } from '@/services/dataService';
 import { Session, Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,20 +20,26 @@ export default function SessionsScreen() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPast, setShowPast] = useState(true);
   const [showToday, setShowToday] = useState(true);
   const [showUpcoming, setShowUpcoming] = useState(true);
   const [mentorCounts, setMentorCounts] = useState<Record<string, number>>({});
+  const [availableCohorts, setAvailableCohorts] = useState<string[]>([]);
+  const [showCohortFilter, setShowCohortFilter] = useState(false);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     loadSessions();
+    if (user?.role === 'Admin') {
+      loadCohorts();
+    }
   }, [user]);
 
   useEffect(() => {
     filterAndSearchSessions();
-  }, [sessions, selectedType, searchQuery]);
+  }, [sessions, selectedType, selectedCohort, searchQuery]);
 
   useEffect(() => {
     // Fetch mentor counts for filtered sessions
@@ -57,14 +63,23 @@ export default function SessionsScreen() {
       setSessions([]);
       return;
     }
-    const cohort = user.cohort;
-    if (!cohort) {
-      setSessions([]);
-      return;
-    }
+    
     try {
-      const normalizedCohort = cohort.trim().toLowerCase();
-      const data = await fetchSessions(normalizedCohort);
+      let data;
+      if (user.role === 'Admin') {
+        // Admin can see all sessions
+        data = await fetchAllSessions();
+      } else {
+        // Regular users see only their cohort sessions
+        const cohort = user.cohort;
+        if (!cohort) {
+          setSessions([]);
+          return;
+        }
+        const normalizedCohort = cohort.trim().toLowerCase();
+        data = await fetchSessions(normalizedCohort);
+      }
+      
       // Map snake_case to camelCase and parse date
       const mapped = (data || []).map((session: any) => ({
         ...session,
@@ -77,7 +92,7 @@ export default function SessionsScreen() {
         description: session.description,
         companyUID: session.company_uid,
         mentorIds: session.mentor_ids || [],
-        cohort: session.cohort, // <-- Add this line
+        cohort: session.cohort,
       }));
       setSessions(mapped);
     } catch (error) {
@@ -85,8 +100,24 @@ export default function SessionsScreen() {
     }
   };
 
+  const loadCohorts = async () => {
+    try {
+      const cohorts = await getUniqueCohorts();
+      setAvailableCohorts(cohorts);
+    } catch (error) {
+      setAvailableCohorts([]);
+    }
+  };
+
   const filterAndSearchSessions = () => {
     let filtered = sessions;
+    
+    // Apply cohort filter (admin only)
+    if (user?.role === 'Admin' && selectedCohort) {
+      filtered = filtered.filter(session => 
+        session.cohort?.toLowerCase() === selectedCohort.toLowerCase()
+      );
+    }
     
     // Apply type filter
     if (selectedType) {
@@ -151,6 +182,7 @@ export default function SessionsScreen() {
         <Text style={styles.title}>Sessions</Text>
         <Text style={styles.subtitle}>
           {filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''}
+          {user?.role === 'Admin' && selectedCohort && ` (${selectedCohort})`}
         </Text>
       </View>
 
@@ -159,6 +191,22 @@ export default function SessionsScreen() {
         selectedType={selectedType}
         onTypeSelect={setSelectedType}
       />
+
+      {/* Admin Cohort Filter */}
+      {user?.role === 'Admin' && (
+        <View style={styles.adminFilterContainer}>
+          <TouchableOpacity
+            style={styles.cohortFilterButton}
+            onPress={() => setShowCohortFilter(true)}
+          >
+            <Filter size={20} color="#000" />
+            <Text style={styles.cohortFilterText}>
+              {selectedCohort ? `Cohort: ${selectedCohort}` : 'Filter by Cohort'}
+            </Text>
+            <ChevronDown size={16} color="#000" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
@@ -211,6 +259,50 @@ export default function SessionsScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Cohort Filter Modal */}
+      <Modal
+        visible={showCohortFilter}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCohortFilter(false)}
+      >
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Filter by Cohort</Text>
+              <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowCohortFilter(false)}>
+                <X size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={availableCohorts}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.cohortItem,
+                    selectedCohort === item && styles.selectedCohortItem
+                  ]}
+                  onPress={() => {
+                    setSelectedCohort(selectedCohort === item ? null : item);
+                    setShowCohortFilter(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.cohortItemText,
+                    selectedCohort === item && styles.selectedCohortItemText
+                  ]}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            />
+          </SafeAreaView>
+        </GestureHandlerRootView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -314,10 +406,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   section: {
-    marginBottom: 24,
-    backgroundColor: 'transparent',
-    paddingVertical: 0,
-    paddingHorizontal: 0,
+    marginBottom: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -330,8 +419,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1a1a1a',
-    marginBottom: 8,
-    marginLeft: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
   },
   sectionCount: {
     fontSize: 14,
@@ -349,5 +438,49 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 16,
     borderRadius: 12,
+  },
+  adminFilterContainer: {
+    backgroundColor: '#f5f7fa',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  cohortFilterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  cohortFilterText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 12,
+  },
+  closeModalButton: {
+    padding: 8,
+  },
+  cohortItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#fff',
+  },
+  selectedCohortItem: {
+    backgroundColor: '#1976d2',
+  },
+  cohortItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  selectedCohortItemText: {
+    color: '#fff',
+    fontWeight: '600',
   },
 });
