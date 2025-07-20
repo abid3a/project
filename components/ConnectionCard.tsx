@@ -91,7 +91,7 @@ export function ConnectionCard({
             <Text style={styles.name} numberOfLines={1}>
               {connection.firstName} {connection.lastName}
             </Text>
-            <View style={[styles.typeTag, { backgroundColor: typeColor.bg, marginLeft: 8, alignSelf: 'center' }]}> 
+            <View style={[styles.typeTag, { backgroundColor: typeColor.bg, marginLeft: 8, alignSelf: 'flex-start' }]}> 
               <Text style={[styles.typeText, { color: '#000' }]}>{connection.type}</Text>
             </View>
           </View>
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: 2,
+    marginBottom: 6,
   },
   role: {
     fontSize: 13,

@@ -10,6 +10,52 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Session, Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 
+const predefinedTypeColors: Record<string, { bg: string; text: string }> = {
+  Workshop: { bg: '#e8f4fd', text: '#1976d2' },
+  Seminar: { bg: '#fff3e0', text: '#f57c00' },
+  Lecture: { bg: '#f3e5f5', text: '#7b1fa2' },
+  Discussion: { bg: '#e8f5e8', text: '#388e3c' },
+  Training: { bg: '#fff8e1', text: '#f9a825' },
+};
+
+const defaultColor = { bg: '#eeeeee', text: '#424242' };
+
+// Dynamic color palette for new types
+const dynamicColors = [
+  { bg: '#e3f2fd', text: '#1565c0' }, // Light blue
+  { bg: '#fce4ec', text: '#c2185b' }, // Light pink
+  { bg: '#e0f2f1', text: '#00695c' }, // Light teal
+  { bg: '#fff3e0', text: '#ef6c00' }, // Light orange
+  { bg: '#f3e5f5', text: '#7b1fa2' }, // Light purple
+  { bg: '#e8f5e8', text: '#2e7d32' }, // Light green
+  { bg: '#fff8e1', text: '#f57f17' }, // Light amber
+  { bg: '#fce4ec', text: '#ad1457' }, // Light rose
+  { bg: '#e0f7fa', text: '#00838f' }, // Light cyan
+  { bg: '#f1f8e9', text: '#558b2f' }, // Light lime
+];
+
+// Cache for dynamically assigned colors
+const dynamicTypeColors: Record<string, { bg: string; text: string }> = {};
+
+function getTypeColor(type: string): { bg: string; text: string } {
+  // Check predefined colors first
+  if (predefinedTypeColors[type]) {
+    return predefinedTypeColors[type];
+  }
+  
+  // Check if we already assigned a color to this type
+  if (dynamicTypeColors[type]) {
+    return dynamicTypeColors[type];
+  }
+  
+  // Assign a new color from the dynamic palette
+  const colorIndex = Object.keys(dynamicTypeColors).length % dynamicColors.length;
+  const newColor = dynamicColors[colorIndex];
+  dynamicTypeColors[type] = newColor;
+  
+  return newColor;
+}
+
 export default function SessionDetailsScreen() {
   const router = useRouter();
   const { sessionId } = useLocalSearchParams<{ sessionId: string }>();
@@ -154,8 +200,8 @@ export default function SessionDetailsScreen() {
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.card, styles.cardFirst]}>
           <Text style={styles.sessionTitle}>{session.name}</Text>
-          <View style={styles.typeTag}>
-            <Text style={styles.typeText}>{session.type}</Text>
+          <View style={[styles.typeTag, { backgroundColor: getTypeColor(session.type).bg }]}>
+            <Text style={[styles.typeText, { color: getTypeColor(session.type).text }]}>{session.type}</Text>
           </View>
         </View>
         <View style={styles.card}>
@@ -252,7 +298,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   typeTag: {
-    backgroundColor: '#e8f4fd',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -261,7 +306,6 @@ const styles = StyleSheet.create({
   typeText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#000',
   },
   sectionTitle: {
     fontSize: 18,

@@ -135,6 +135,21 @@ export default function SessionsScreen() {
       );
     }
     
+    // Sort by date ascending, then by time ascending for same date
+    filtered = filtered.sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      
+      // First compare dates
+      const dateComparison = dateA.getTime() - dateB.getTime();
+      if (dateComparison !== 0) {
+        return dateComparison;
+      }
+      
+      // If dates are the same, compare times
+      return dateA.getTime() - dateB.getTime();
+    });
+    
     setFilteredSessions(filtered);
   };
 
