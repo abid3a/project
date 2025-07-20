@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   typeText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#f57c00',
+    color: '#000',
   },
   details: {
     marginBottom: 12,

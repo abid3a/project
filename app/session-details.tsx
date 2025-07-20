@@ -159,7 +159,7 @@ export default function SessionDetailsScreen() {
           </View>
         </View>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Details</Text>
+          <Text style={styles.sectionTitle}>About</Text>
           <View style={styles.details}>
             <View style={styles.detailRow}>
               <Calendar size={20} color="#000" />
@@ -176,9 +176,7 @@ export default function SessionDetailsScreen() {
               <Text style={styles.detailText}>{session.location}</Text>
             </View>
           </View>
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Description</Text>
+          <View style={styles.divider} />
           <Text style={styles.description}>{session.description}</Text>
         </View>
         {mentors.length > 0 && (
@@ -255,15 +253,15 @@ const styles = StyleSheet.create({
   },
   typeTag: {
     backgroundColor: '#e8f4fd',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     alignSelf: 'flex-start',
   },
   typeText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
-    color: '#1976d2',
+    color: '#000',
   },
   sectionTitle: {
     fontSize: 18,
@@ -273,6 +271,11 @@ const styles = StyleSheet.create({
   },
   details: {
     marginBottom: 8,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#c0c0c0',
+    marginVertical: 8,
   },
   detailRow: {
     flexDirection: 'row',

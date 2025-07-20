@@ -44,6 +44,7 @@ export default function ConnectionDetailsScreen() {
   const [editMode, setEditMode] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
   const [bioNeedsExpand, setBioNeedsExpand] = useState(false);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
 
   useEffect(() => {
     if (connectionId && user) {
@@ -113,6 +114,10 @@ export default function ConnectionDetailsScreen() {
       toggleFavorite(connection.id);
       setConnection({ ...connection, isFavorite: !connection.isFavorite });
     }
+  };
+
+  const handleImagePress = () => {
+    setImageModalVisible(true);
   };
 
   const handleSessionPress = (session: Session) => {
@@ -245,7 +250,7 @@ export default function ConnectionDetailsScreen() {
               </TouchableOpacity>
             ) : null}
             <View style={styles.profileSection}>
-              <View style={styles.avatarSquare}>
+              <TouchableOpacity style={styles.avatarSquare} onPress={handleImagePress} activeOpacity={0.8}>
                 {connection.profileImage ? (
                   typeof connection.profileImage === 'number' ? (
                     <Image source={connection.profileImage} style={{ width: 64, height: 64, borderRadius: 12 }} />
@@ -263,7 +268,7 @@ export default function ConnectionDetailsScreen() {
                     <User size={32} color="#000" />
                   </View>
                 )}
-              </View>
+              </TouchableOpacity>
               <Text style={styles.connectionName}>
                 {connection.firstName} {connection.lastName}
               </Text>
@@ -457,6 +462,56 @@ export default function ConnectionDetailsScreen() {
                 </View>
               </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Full Screen Image Modal */}
+      <Modal
+        visible={imageModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setImageModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setImageModalVisible(false)}>
+          <View style={styles.imageModalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.imageModalContent}>
+                {connection?.profileImage ? (
+                  typeof connection.profileImage === 'number' ? (
+                    <Image 
+                      source={connection.profileImage} 
+                      style={styles.fullScreenImage}
+                      resizeMode="contain"
+                    />
+                  ) : bannerMap[connection.profileImage] ? (
+                    <Image 
+                      source={bannerMap[connection.profileImage]} 
+                      style={styles.fullScreenImage}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <Image 
+                      source={{ uri: connection.profileImage }} 
+                      style={styles.fullScreenImage}
+                      resizeMode="contain"
+                      defaultSource={defaultAvatar}
+                    />
+                  )
+                ) : (
+                  <View style={styles.fullScreenFallback}>
+                    <User size={120} color="#000" />
+                    <Text style={styles.fullScreenFallbackText}>No Image Available</Text>
+                  </View>
+                )}
+                <TouchableOpacity 
+                  style={styles.closeImageButton} 
+                  onPress={() => setImageModalVisible(false)}
+                >
+                  <X size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -745,5 +800,43 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     resizeMode: 'contain',
+  },
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
+  },
+  fullScreenFallback: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 20,
+    padding: 40,
+  },
+  fullScreenFallbackText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  closeImageButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 10,
   },
 }); 

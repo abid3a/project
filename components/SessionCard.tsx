@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   typeText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#1976d2',
+    color: '#000',
   },
   details: {
     marginBottom: 12,

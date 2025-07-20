@@ -51,9 +51,27 @@ export function ConnectionCard({
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
     >
-      {/* Header row: avatar (if any), name/role/company, heart icon */}
+      {/* Heart button positioned absolutely in top right */}
+      {showFavoriteButton && (
+        <Pressable
+          style={styles.favoriteButton}
+          onPress={onToggleFavorite}
+          hitSlop={16}
+          accessibilityLabel={connection.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          accessibilityRole="button"
+        >
+          <Heart
+            size={22}
+            color={connection.isFavorite ? "#1976d2" : "#bdbdbd"}
+            fill={connection.isFavorite ? "#1976d2" : "none"}
+            strokeWidth={2}
+          />
+        </Pressable>
+      )}
+      
+      {/* Header row: avatar and name/role/company */}
       <View style={styles.headerRow}>
-        {connection.profileImage && (
+        {connection.profileImage ? (
           <Image
             source={
               typeof connection.profileImage === 'number'
@@ -61,7 +79,12 @@ export function ConnectionCard({
                 : bannerMap[connection.profileImage] || { uri: connection.profileImage }
             }
             style={styles.avatarImg}
+            defaultSource={defaultAvatar}
           />
+        ) : (
+          <View style={styles.avatarFallback}>
+            <User size={20} color="#666" />
+          </View>
         )}
         <View style={styles.headerTextColWithAvatar}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -69,7 +92,7 @@ export function ConnectionCard({
               {connection.firstName} {connection.lastName}
             </Text>
             <View style={[styles.typeTag, { backgroundColor: typeColor.bg, marginLeft: 8, alignSelf: 'center' }]}> 
-              <Text style={[styles.typeText, { color: typeColor.text }]}>{connection.type}</Text>
+              <Text style={[styles.typeText, { color: '#000' }]}>{connection.type}</Text>
             </View>
           </View>
           {/* Conditional role/company line */}
@@ -87,22 +110,6 @@ export function ConnectionCard({
             </Text>
           ) : null}
         </View>
-        {showFavoriteButton && (
-          <Pressable
-            style={styles.favoriteButton}
-            onPress={onToggleFavorite}
-            hitSlop={16}
-            accessibilityLabel={connection.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-            accessibilityRole="button"
-          >
-            <Heart
-              size={22}
-              color={connection.isFavorite ? "#1976d2" : "#bdbdbd"}
-              fill={connection.isFavorite ? "#1976d2" : "none"}
-              strokeWidth={2}
-            />
-          </Pressable>
-        )}
       </View>
       {/* Stats row: sessions and meetings */}
       <View style={styles.statsRow}>
@@ -124,13 +131,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#e3e8ef',
-    padding: 18,
+    padding: 22,
     marginVertical: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07,
     shadowRadius: 8,
     elevation: 2,
+    position: 'relative',
   },
   cardPressed: {
     opacity: 0.96,
@@ -138,7 +146,6 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 10,
   },
   headerTextCol: {
@@ -149,7 +156,6 @@ const styles = StyleSheet.create({
   headerTextColWithAvatar: {
     flex: 1,
     minWidth: 0,
-    marginRight: 10,
     justifyContent: 'center',
   },
   name: {
@@ -164,8 +170,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   favoriteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
     padding: 8,
     borderRadius: 16,
+    zIndex: 1,
   },
   statsRow: {
     flexDirection: 'row',
@@ -174,7 +184,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#1976d2',
     fontWeight: '600',
   },
@@ -206,9 +216,10 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   avatarFallback: {
-    width: 48,
-    height: 48,
-    borderRadius: 8, // changed from 24 for rounded rectangle
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 12,
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
@@ -238,6 +249,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
     textAlign: 'center',
+    color: '#000',
   },
   orgRow: {
     flexDirection: 'row',
