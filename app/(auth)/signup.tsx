@@ -70,7 +70,7 @@ export default function SignupScreen() {
           <View style={styles.form}>
             <View style={styles.row}>
               <View style={[styles.inputContainer, styles.halfWidth]}>
-                <User size={20} color="#666" style={styles.inputIcon} />
+                <User size={20} color="#000" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="First Name"
@@ -82,7 +82,7 @@ export default function SignupScreen() {
               </View>
               
               <View style={[styles.inputContainer, styles.halfWidth]}>
-                <User size={20} color="#666" style={styles.inputIcon} />
+                <User size={20} color="#000" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Last Name"
@@ -95,7 +95,7 @@ export default function SignupScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Building size={20} color="#666" style={styles.inputIcon} />
+              <Building size={20} color="#000" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Company Name"
@@ -107,7 +107,7 @@ export default function SignupScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Building size={20} color="#666" style={styles.inputIcon} />
+              <Building size={20} color="#000" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Company UID"
@@ -119,7 +119,7 @@ export default function SignupScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Mail size={20} color="#666" style={styles.inputIcon} />
+              <Mail size={20} color="#000" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -133,7 +133,7 @@ export default function SignupScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Lock size={20} color="#666" style={styles.inputIcon} />
+              <Lock size={20} color="#000" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
@@ -148,9 +148,9 @@ export default function SignupScreen() {
                 onPress={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <EyeOff size={20} color="#666" />
+                  <EyeOff size={20} color="#000" />
                 ) : (
-                  <Eye size={20} color="#666" />
+                  <Eye size={20} color="#000" />
                 )}
               </TouchableOpacity>
             </View>

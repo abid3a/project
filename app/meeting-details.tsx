@@ -101,7 +101,7 @@ export default function MeetingDetailsScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <X size={24} color="#666" />
+            <X size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.title}>Meeting Not Found</Text>
         </View>
@@ -113,7 +113,7 @@ export default function MeetingDetailsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <X size={24} color="#666" />
+          <X size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>Meeting Details</Text>
         <View style={{ width: 24 }} />
@@ -130,17 +130,17 @@ export default function MeetingDetailsScreen() {
           <Text style={styles.sectionTitle}>Details</Text>
           <View style={styles.details}>
             <View style={styles.detailRow}>
-              <Calendar size={20} color="#666" />
+              <Calendar size={20} color="#000" />
               <Text style={styles.detailText}>{formatDate(meeting.date)}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Clock size={20} color="#666" />
+              <Clock size={20} color="#000" />
               <Text style={styles.detailText}>
                 {formatTime(meeting.date)} • {meeting.duration} minutes
               </Text>
             </View>
             <View style={styles.detailRow}>
-              <MapPin size={20} color="#666" />
+              <MapPin size={20} color="#000" />
               <Text style={styles.detailText}>{meeting.location}</Text>
             </View>
           </View>

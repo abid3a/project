@@ -130,7 +130,7 @@ export default function SessionDetailsScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
-            <X size={24} color="#666" />
+            <X size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.title}>Session Not Found</Text>
         </View>
@@ -142,7 +142,7 @@ export default function SessionDetailsScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <X size={24} color="#666" />
+          <X size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>Session Details</Text>
         <View style={{ width: 24 }} />
@@ -159,17 +159,17 @@ export default function SessionDetailsScreen() {
           <Text style={styles.sectionTitle}>Details</Text>
           <View style={styles.details}>
             <View style={styles.detailRow}>
-              <Calendar size={20} color="#666" />
+              <Calendar size={20} color="#000" />
               <Text style={styles.detailText}>{formatDate(session.date)}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Clock size={20} color="#666" />
+              <Clock size={20} color="#000" />
               <Text style={styles.detailText}>
                 {formatTime(session.date)} • {formatDuration(session.duration)}
               </Text>
             </View>
             <View style={styles.detailRow}>
-              <MapPin size={20} color="#666" />
+              <MapPin size={20} color="#000" />
               <Text style={styles.detailText}>{session.location}</Text>
             </View>
           </View>

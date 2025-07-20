@@ -47,24 +47,24 @@ export function MeetingCard({ meeting, onPress }: MeetingCardProps) {
       
       <View style={styles.details}>
         <View style={styles.detailRow}>
-          <Calendar size={16} color="#666" />
+          <Calendar size={16} color="#000" />
           <Text style={styles.detailText}>{formatDate(meeting.date)}</Text>
         </View>
         
         <View style={styles.detailRow}>
-          <Clock size={16} color="#666" />
+          <Clock size={16} color="#000" />
           <Text style={styles.detailText}>
             {formatTime(meeting.date)} • {meeting.duration}min
           </Text>
         </View>
         
         <View style={styles.detailRow}>
-          <MapPin size={16} color="#666" />
+          <MapPin size={16} color="#000" />
           <Text style={styles.detailText}>{meeting.location}</Text>
         </View>
         
         <View style={styles.detailRow}>
-          <Users size={16} color="#666" />
+          <Users size={16} color="#000" />
           <Text style={styles.detailText}>
             {(meeting.attendeeIds || []).length} attendee{(meeting.attendeeIds || []).length !== 1 ? 's' : ''}
           </Text>

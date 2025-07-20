@@ -65,7 +65,7 @@ export function ConnectionCard({
             )
           ) : (
             <View style={styles.avatarFallback}>
-              <User size={24} color="#666" />
+              <User size={24} color="#000" />
             </View>
           )}
         </View>
@@ -95,7 +95,7 @@ export function ConnectionCard({
             </View>
           </View>
           <View style={styles.orgRow}>
-            <Building size={13} color="#bdbdbd" />
+            <Building size={13} color="#000" />
             <Text style={styles.organization} numberOfLines={1}>{connection.organization}</Text>
           </View>
         </View>

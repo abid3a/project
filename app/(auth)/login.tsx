@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
@@ -55,17 +56,20 @@ export default function LoginScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>TBDC Horizon</Text>
-            <Text style={styles.subtitle}>Welcome back</Text>
+            <Image 
+              source={require('@/assets/images/horizon_logo.png')} 
+              style={styles.logo}
+              resizeMode="contain"
+            />
           </View>
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <Mail size={20} color="#666" style={styles.inputIcon} />
+              <Mail size={20} color="#000" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Email"
-                placeholderTextColor="#000"
+                placeholderTextColor="#666"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -75,11 +79,11 @@ export default function LoginScreen() {
             </View>
 
             <View style={styles.inputContainer}>
-              <Lock size={20} color="#666" style={styles.inputIcon} />
+              <Lock size={20} color="#000" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
                 placeholder="Password"
-                placeholderTextColor="#000"
+                placeholderTextColor="#666"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -90,9 +94,9 @@ export default function LoginScreen() {
                 onPress={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? (
-                  <EyeOff size={20} color="#666" />
+                  <EyeOff size={20} color="#000" />
                 ) : (
-                  <Eye size={20} color="#666" />
+                  <Eye size={20} color="#000" />
                 )}
               </TouchableOpacity>
             </View>
@@ -125,12 +129,7 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            <View style={styles.signupContainer}>
-              <Text style={styles.signupText}>Don't have an account? </Text>
-              <Link href="/(auth)/signup" style={styles.signupLink}>
-                <Text style={styles.signupLinkText}>Sign up</Text>
-              </Link>
-            </View>
+
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -141,7 +140,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fff',
   },
   scrollContent: {
     flexGrow: 1,
@@ -151,6 +150,11 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 48,
+  },
+  logo: {
+    width: 360,
+    height: 180,
+    marginBottom: 24,
   },
   title: {
     fontSize: 32,
@@ -168,7 +172,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 16,
@@ -185,13 +189,13 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 56,
     fontSize: 16,
-    color: '#333',
+    color: '#000',
   },
   eyeIcon: {
     padding: 4,
   },
   loginButton: {
-    backgroundColor: '#1976d2',
+    backgroundColor: '#cd9d5a',
     borderRadius: 12,
     height: 56,
     justifyContent: 'center',
@@ -202,7 +206,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   loginButtonText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -212,7 +216,7 @@ const styles = StyleSheet.create({
   },
   demoTitle: {
     fontSize: 14,
-    color: '#666',
+    color: '#000',
     marginBottom: 12,
   },
   demoButtons: {
@@ -220,13 +224,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   demoButton: {
-    backgroundColor: '#f57c00',
+    backgroundColor: '#cd9d5a',
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 8,
   },
   demoButtonText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 14,
     fontWeight: '500',
   },

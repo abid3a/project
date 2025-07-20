@@ -71,24 +71,24 @@ export function SessionCard({ session, onPress }: SessionCardProps) {
       
       <View style={styles.details}>
         <View style={styles.detailRow}>
-          <Calendar size={16} color="#666" />
+          <Calendar size={16} color="#000" />
           <Text style={styles.detailText}>{formatDate(session.date)}</Text>
         </View>
         
         <View style={styles.detailRow}>
-          <Clock size={16} color="#666" />
+          <Clock size={16} color="#000" />
           <Text style={styles.detailText}>
             {formatTime(session.date)} • {formatDuration(session.duration)}
           </Text>
         </View>
         
         <View style={styles.detailRow}>
-          <MapPin size={16} color="#666" />
+          <MapPin size={16} color="#000" />
           <Text style={styles.detailText}>{session.location}</Text>
         </View>
         
         <View style={styles.detailRow}>
-          <Users size={16} color="#666" />
+          <Users size={16} color="#000" />
           <Text style={styles.detailText}>
             {session.mentorIds.length} mentor{session.mentorIds.length !== 1 ? 's' : ''}
           </Text>

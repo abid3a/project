@@ -187,9 +187,9 @@ export default function ConnectionDetailsScreen() {
       <SafeAreaView style={[styles.container, { backgroundColor: '#fff' }]}> 
         <StatusBar style="dark" backgroundColor="#fff" />
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <X size={24} color="#666" />
-          </TouchableOpacity>
+                  <TouchableOpacity onPress={() => router.back()}>
+          <X size={24} color="#000" />
+        </TouchableOpacity>
           <Text style={styles.title}>Connection Not Found</Text>
         </View>
       </SafeAreaView>
@@ -201,7 +201,7 @@ export default function ConnectionDetailsScreen() {
       <StatusBar style="dark" backgroundColor="#fff" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <X size={24} color="#666" />
+          <X size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>Connection Details</Text>
         <TouchableOpacity onPress={handleToggleFavorite} style={styles.favoriteButton}>
@@ -253,7 +253,7 @@ export default function ConnectionDetailsScreen() {
                   )
                 ) : (
                   <View style={styles.avatarFallback}>
-                    <User size={32} color="#666" />
+                    <User size={32} color="#000" />
                   </View>
                 )}
               </View>

@@ -160,7 +160,7 @@ export default function MeetingsScreen() {
 
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
-          <Search size={20} color="#666" style={styles.searchIcon} />
+          <Search size={20} color="#000" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search meetings..."

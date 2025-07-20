@@ -85,7 +85,7 @@ export default function ProfileScreen() {
           <Text style={styles.reportTitle}>{item.title}</Text>
           <View style={styles.reportMeta}>
             <View style={styles.reportMetaRow}>
-              <Calendar size={14} color="#666" />
+              <Calendar size={14} color="#000" />
               <Text style={styles.reportMetaText}>{formatDate(item.date)}</Text>
             </View>
             <View style={styles.reportTypeTag}>
@@ -155,7 +155,7 @@ export default function ProfileScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: '#f5f7fa' }}>
         <View style={styles.profileSection}>
           <View style={styles.avatar}>
-            <User size={40} color="#666" />
+            <User size={40} color="#000" />
           </View>
           
           <Text style={styles.userName}>
@@ -172,7 +172,7 @@ export default function ProfileScreen() {
         <View style={styles.infoSection}>
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
-              <Mail size={20} color="#666" />
+              <Mail size={20} color="#000" />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Email</Text>
                 <Text style={styles.infoValue}>{user.email}</Text>
@@ -180,7 +180,7 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Building size={20} color="#666" />
+              <Building size={20} color="#000" />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Company</Text>
                 <Text style={styles.infoValue}>{user.companyName}</Text>
@@ -188,7 +188,7 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.infoRow}>
-              <Building size={20} color="#666" />
+              <Building size={20} color="#000" />
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Company ID</Text>
                 <Text style={styles.infoValue}>{user.companyUID}</Text>
@@ -231,7 +231,7 @@ export default function ProfileScreen() {
             <View style={styles.header}>
               <Text style={styles.title}>Admin Panel</Text>
               <TouchableOpacity style={styles.closeModalButton} onPress={() => setAdminModalVisible(false)}>
-                <X size={24} color="#666" />
+                <X size={24} color="#000" />
               </TouchableOpacity>
             </View>
             <View style={styles.actionsBar}>
@@ -250,13 +250,13 @@ export default function ProfileScreen() {
                 <View style={styles.userCard}>
                   <View style={styles.userHeader}>
                     <View style={styles.userAvatar}>
-                      <User size={24} color="#666" />
+                      <User size={24} color="#000" />
                     </View>
                     <View style={styles.userInfo}>
                       <Text style={styles.modalUserName}>{item.firstName} {item.lastName}</Text>
                       <Text style={styles.modalUserEmail}>{item.email}</Text>
                       <View style={styles.userMeta}>
-                        <Building size={14} color="#666" />
+                        <Building size={14} color="#000" />
                         <Text style={styles.userCompany}>{item.companyName}</Text>
                       </View>
                     </View>
@@ -320,7 +320,7 @@ export default function ProfileScreen() {
                 <Text style={styles.title}>Reports</Text>
               </View>
               <TouchableOpacity style={{ position: 'absolute', right: 20, top: 20, padding: 4 }} onPress={() => setReportsModalVisible(false)}>
-                <X size={24} color="#666" />
+                <X size={24} color="#000" />
               </TouchableOpacity>
             </View>
             <FlatList
