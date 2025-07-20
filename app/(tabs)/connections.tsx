@@ -54,10 +54,10 @@ export default function ConnectionsScreen() {
         const fullName = `${c.firstName} ${c.lastName}`.toLowerCase();
         return (
           fullName.includes(q) ||
-          c.role.toLowerCase().includes(q) ||
-          c.type.toLowerCase().includes(q) ||
-          c.organization.toLowerCase().includes(q) ||
-          c.bio.toLowerCase().includes(q)
+          (c.role ? c.role.toLowerCase() : '').includes(q) ||
+          (c.type ? c.type.toLowerCase() : '').includes(q) ||
+          (c.organization ? c.organization.toLowerCase() : '').includes(q) ||
+          (c.bio ? c.bio.toLowerCase() : '').includes(q)
         );
       });
     }

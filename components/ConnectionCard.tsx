@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
-import { Building, Heart, User } from 'lucide-react-native';
+import { Building, Heart, User, Calendar, Users } from 'lucide-react-native';
 import { Connection } from '@/types';
 
 interface ConnectionCardProps {
@@ -13,9 +13,12 @@ interface ConnectionCardProps {
 }
 
 const typeColors: Record<string, { bg: string; text: string }> = {
-  Mentor: { bg: '#e8f5e9', text: '#388e3c' },
-  Customer: { bg: '#fffde7', text: '#fbc02d' },
-  EIR: { bg: '#e3f2fd', text: '#1976d2' },
+  Mentor: { bg: '#c8e6c9', text: '#1b5e20' }, // deeper pastel green, stronger text
+  Customer: { bg: '#fff9c4', text: '#f57c00' }, // deeper pastel yellow, stronger text
+  EIR: { bg: '#bbdefb', text: '#0d47a1' }, // deeper pastel blue, stronger text
+  Meeting: { bg: '#e1bee7', text: '#6a1b9a' }, // deeper pastel purple, stronger text
+  Admin: { bg: '#ffccbc', text: '#bf360c' }, // deeper pastel orange, stronger text
+  Default: { bg: '#eeeeee', text: '#424242' },
 };
 
 // Map for local banner images
@@ -37,7 +40,7 @@ export function ConnectionCard({
   meetingCount
 }: ConnectionCardProps) {
   const [pressed, setPressed] = useState(false);
-  const typeColor = typeColors[connection.type] || { bg: '#f5f5f5', text: '#888' };
+  const typeColor = typeColors[connection.type] || typeColors.Default;
   return (
     <Pressable
       style={({ pressed: isPressed }) => [
@@ -48,65 +51,68 @@ export function ConnectionCard({
       onPressIn={() => setPressed(true)}
       onPressOut={() => setPressed(false)}
     >
-      <View style={styles.topRow}>
-        <View style={styles.avatarWrapper}>
-          {connection.profileImage ? (
-            typeof connection.profileImage === 'number' ? (
-              <Image source={connection.profileImage} style={styles.avatarImg} />
-            ) : bannerMap[connection.profileImage] ? (
-              <Image source={bannerMap[connection.profileImage]} style={styles.avatarImg} />
-            ) : (
-              <Image 
-                source={{ uri: connection.profileImage }} 
-                style={styles.avatarImg} 
-                onError={() => {}} 
-                defaultSource={defaultAvatar} 
-              />
-            )
-          ) : (
-            <View style={styles.avatarFallback}>
-              <User size={24} color="#000" />
-            </View>
-          )}
-        </View>
-        <View style={styles.infoCol}>
-          <View style={styles.nameRow}>
+      {/* Header row: avatar (if any), name/role/company, heart icon */}
+      <View style={styles.headerRow}>
+        {connection.profileImage && (
+          <Image
+            source={
+              typeof connection.profileImage === 'number'
+                ? connection.profileImage
+                : bannerMap[connection.profileImage] || { uri: connection.profileImage }
+            }
+            style={styles.avatarImg}
+          />
+        )}
+        <View style={styles.headerTextColWithAvatar}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.name} numberOfLines={1}>
               {connection.firstName} {connection.lastName}
             </Text>
-            {showFavoriteButton && (
-              <Pressable 
-                style={styles.favoriteButton}
-                onPress={onToggleFavorite}
-                hitSlop={10}
-              >
-                <Heart 
-                  size={22} 
-                  color={connection.isFavorite ? "#1976d2" : "#bdbdbd"}
-                  fill={connection.isFavorite ? "#1976d2" : "none"}
-                />
-              </Pressable>
-            )}
-          </View>
-          <View style={styles.roleRow}>
-            <Text style={styles.role} numberOfLines={1}>{connection.role}</Text>
-            <View style={[styles.typeTag, { backgroundColor: typeColor.bg }]}> 
+            <View style={[styles.typeTag, { backgroundColor: typeColor.bg, marginLeft: 8, alignSelf: 'center' }]}> 
               <Text style={[styles.typeText, { color: typeColor.text }]}>{connection.type}</Text>
             </View>
           </View>
-          <View style={styles.orgRow}>
-            <Building size={13} color="#000" />
-            <Text style={styles.organization} numberOfLines={1}>{connection.organization}</Text>
-          </View>
+          {/* Conditional role/company line */}
+          {connection.role && connection.organization ? (
+            <Text style={styles.role} numberOfLines={1}>
+              {connection.role} | {connection.organization}
+            </Text>
+          ) : connection.role ? (
+            <Text style={styles.role} numberOfLines={1}>
+              {connection.role}
+            </Text>
+          ) : connection.organization ? (
+            <Text style={styles.role} numberOfLines={1}>
+              {connection.organization}
+            </Text>
+          ) : null}
         </View>
-      </View>
-      <Text style={styles.bio} numberOfLines={2}>{connection.bio}</Text>
-      <View style={styles.statsRow}>
-        {typeof sessionCount === 'number' && (
-          <Text style={styles.statText}>{sessionCount} session{sessionCount !== 1 ? 's' : ''}</Text>
+        {showFavoriteButton && (
+          <Pressable
+            style={styles.favoriteButton}
+            onPress={onToggleFavorite}
+            hitSlop={16}
+            accessibilityLabel={connection.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            accessibilityRole="button"
+          >
+            <Heart
+              size={22}
+              color={connection.isFavorite ? "#1976d2" : "#bdbdbd"}
+              fill={connection.isFavorite ? "#1976d2" : "none"}
+              strokeWidth={2}
+            />
+          </Pressable>
         )}
-        {typeof sessionCount === 'number' && <Text style={styles.statDot}>·</Text>}
-        <Text style={styles.statText}>{typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length} meeting{(typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length) !== 1 ? 's' : ''}</Text>
+      </View>
+      {/* Stats row: sessions and meetings */}
+      <View style={styles.statsRow}>
+        <Text style={styles.statText}>
+          {typeof sessionCount === 'number' ? sessionCount : 0} session{sessionCount === 1 ? '' : 's'}
+        </Text>
+        <Text style={styles.statDivider}>/</Text>
+        <Text style={styles.statText}>
+          {typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length} meeting{(typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length) === 1 ? '' : 's'}
+        </Text>
       </View>
     </Pressable>
   );
@@ -115,20 +121,68 @@ export function ConnectionCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: '#e3e8ef',
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
+    padding: 18,
+    marginVertical: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
     elevation: 2,
   },
   cardPressed: {
-    opacity: 0.96, // Subtle feedback
+    opacity: 0.96,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  headerTextCol: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 10,
+  },
+  headerTextColWithAvatar: {
+    flex: 1,
+    minWidth: 0,
+    marginRight: 10,
+    justifyContent: 'center',
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 2,
+  },
+  role: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+  },
+  favoriteButton: {
+    padding: 8,
+    borderRadius: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 8,
+  },
+  statText: {
+    fontSize: 13,
+    color: '#1976d2',
+    fontWeight: '600',
+  },
+  statDivider: {
+    fontSize: 13,
+    color: '#bbb',
+    marginHorizontal: 6,
+    fontWeight: '600',
   },
   topRow: {
     flexDirection: 'row',
@@ -138,7 +192,7 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 8, // changed from 24 for rounded rectangle
     overflow: 'hidden',
     backgroundColor: '#f5f5f5',
     marginRight: 14,
@@ -146,15 +200,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatarImg: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    resizeMode: 'cover',
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 12,
   },
   avatarFallback: {
     width: 48,
     height: 48,
-    borderRadius: 24,
+    borderRadius: 8, // changed from 24 for rounded rectangle
     backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
@@ -163,53 +217,38 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  nameRow: {
+  roleOrgRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 2,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    flexShrink: 1,
-    marginRight: 8,
-  },
-  favoriteButton: {
-    marginLeft: 8,
-    padding: 4,
-  },
-  roleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-    justifyContent: 'space-between',
-  },
-  role: {
-    fontSize: 13,
-    color: '#000',
-    marginRight: 8,
-    flexShrink: 1,
-    flexGrow: 1,
   },
   typeTag: {
-    borderRadius: 6,
-    paddingHorizontal: 8,
+    borderRadius: 16, // pill shape
+    paddingHorizontal: 10,
     paddingVertical: 2,
     marginLeft: 0,
     flexShrink: 0,
     alignSelf: 'flex-end',
+    minWidth: 60,
+    alignItems: 'center',
   },
   typeText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     letterSpacing: 0.2,
+    textAlign: 'center',
   },
   orgRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 2,
+    marginTop: 2,
+    gap: 4,
+  },
+  orgIcon: {
+    marginRight: 4,
+    alignSelf: 'center',
   },
   organization: {
     fontSize: 12,
@@ -218,25 +257,33 @@ const styles = StyleSheet.create({
     maxWidth: 120,
   },
   bio: {
-    fontSize: 14,
-    color: '#444',
-    lineHeight: 20,
-    marginBottom: 10,
+    display: 'none',
   },
-  statsRow: {
+  chipsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 12,
+    gap: 12,
   },
-  statText: {
-    fontSize: 12,
-    color: '#000',
-    fontWeight: '500',
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f4fa',
+    borderRadius: 16, // pill shape
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    marginRight: 0,
+    minWidth: 80,
+    justifyContent: 'center',
   },
-  statDot: {
-    fontSize: 14,
-    color: '#000',
-    marginHorizontal: 6,
-    fontWeight: 'bold',
+  chipIcon: {
+    marginRight: 6,
+    alignSelf: 'center',
+  },
+  chipLabel: {
+    fontSize: 13,
+    color: '#1976d2',
+    fontWeight: '600',
+    textAlignVertical: 'center',
   },
 });
