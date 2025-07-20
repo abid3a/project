@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function TabLayout() {
   const { user } = useAuth();
-  console.log('Current user:', user);
 
   if (!user) return null;
 
@@ -12,8 +11,8 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#000',
-        tabBarInactiveTintColor: '#000',
+        tabBarActiveTintColor: '#1976d2', // blue for active
+        tabBarInactiveTintColor: '#000', // original color for inactive
         tabBarStyle: {
           backgroundColor: '#fff',
           borderTopWidth: 1,

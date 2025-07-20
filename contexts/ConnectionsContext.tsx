@@ -66,15 +66,35 @@ export function ConnectionsProvider({ children }: { children: React.ReactNode })
     if (!user) return;
     const companyUID = user.companyUID;
     const isFav = favoriteIds.includes(connectionId);
+
+    // Optimistically update local state
+    setConnections(prevConnections =>
+      prevConnections.map(conn =>
+        conn.id === connectionId ? { ...conn, isFavorite: !isFav } : conn
+      )
+    );
+    setFavoriteIds(prev =>
+      isFav ? prev.filter(id => id !== connectionId) : [...prev, connectionId]
+    );
+
     try {
       if (isFav) {
         await removeFavorite(companyUID, connectionId);
       } else {
         await addFavorite(companyUID, connectionId);
       }
-      await reloadConnections();
+      // No need to reload connections unless you want to sync after a while
     } catch (e) {
-      // Optionally handle error
+      // Revert optimistic update if error
+      setConnections(prevConnections =>
+        prevConnections.map(conn =>
+          conn.id === connectionId ? { ...conn, isFavorite: isFav } : conn
+        )
+      );
+      setFavoriteIds(prev =>
+        isFav ? [...prev, connectionId] : prev.filter(id => id !== connectionId)
+      );
+      // Optionally show error to user
     }
   };
 

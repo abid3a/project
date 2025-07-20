@@ -173,9 +173,27 @@ export default function MeetingsScreen() {
   });
   const upcomingMeetings = filteredMeetings.filter(m => m.date > new Date(today.getTime() + 24*60*60*1000 - 1));
 
+  // Example: Optimistic update for RSVP (pseudo-code, extend as needed)
+  // const rsvpMeeting = async (meetingId: string, attending: boolean) => {
+  //   setMeetings(prevMeetings =>
+  //     prevMeetings.map(meeting =>
+  //       meeting.id === meetingId ? { ...meeting, attending } : meeting
+  //     )
+  //   );
+  //   try {
+  //     // await api.rsvpMeeting(meetingId, attending);
+  //   } catch (e) {
+  //     setMeetings(prevMeetings =>
+  //       prevMeetings.map(meeting =>
+  //         meeting.id === meetingId ? { ...meeting, attending: !attending } : meeting
+  //       )
+  //     );
+  //   }
+  // };
+
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}>
-      <StatusBar style="dark" backgroundColor="#fff" />
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <Text style={styles.title}>Meetings</Text>
         <Text style={styles.subtitle}>

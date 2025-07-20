@@ -8,6 +8,7 @@ import { useConnections } from '@/contexts/ConnectionsContext';
 import { Meeting, Connection } from '@/types';
 import { fetchMeetingAttendees , fetchSessionCountForConnection, fetchMeetingCountForConnection , fetchMeetings } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
+import { StatusBar } from 'expo-status-bar';
 
 export default function MeetingDetailsScreen() {
   const router = useRouter();
@@ -99,6 +100,7 @@ export default function MeetingDetailsScreen() {
   if (!meeting) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <X size={24} color="#000" />
@@ -111,6 +113,7 @@ export default function MeetingDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <X size={24} color="#000" />

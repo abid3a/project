@@ -8,6 +8,7 @@ import { useConnections } from '@/contexts/ConnectionsContext';
 import { fetchSessions, fetchConnections, fetchSessionMentors, fetchMentorConnections, fetchSessionCountForConnection, fetchMeetingCountForConnection } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Session, Connection } from '@/types';
+import { StatusBar } from 'expo-status-bar';
 
 export default function SessionDetailsScreen() {
   const router = useRouter();
@@ -128,6 +129,7 @@ export default function SessionDetailsScreen() {
   if (!session) {
     return (
       <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" />
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <X size={24} color="#000" />
@@ -140,6 +142,7 @@ export default function SessionDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <X size={24} color="#000" />

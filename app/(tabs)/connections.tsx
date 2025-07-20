@@ -103,7 +103,7 @@ export default function ConnectionsScreen() {
     <>
       {/* top-safe-area only for the header */}
       <SafeAreaView edges={['top']} style={styles.safeTop}>
-        <StatusBar style="dark" backgroundColor="#fff" />
+        <StatusBar style="dark" />
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <Text style={styles.title}>Connections</Text>

@@ -38,7 +38,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" backgroundColor="#fff" />
+      <StatusBar style="dark" />
       {/* Add empty space to preserve layout */}
       <View style={{ height: 66 }} />
       <View style={styles.bannerSection}>

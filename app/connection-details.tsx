@@ -185,7 +185,7 @@ export default function ConnectionDetailsScreen() {
   if (!connection) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: '#fff' }]}> 
-        <StatusBar style="dark" backgroundColor="#fff" />
+        <StatusBar style="dark" />
         <View style={styles.header}>
                   <TouchableOpacity onPress={() => router.back()}>
           <X size={24} color="#000" />
@@ -198,7 +198,7 @@ export default function ConnectionDetailsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#f5f7fa' }]}> 
-      <StatusBar style="dark" backgroundColor="#fff" />
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <X size={24} color="#000" />

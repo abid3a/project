@@ -175,9 +175,29 @@ export default function SessionsScreen() {
   });
   const upcomingSessions = filteredSessions.filter(s => s.date > new Date(today.getTime() + 24*60*60*1000 - 1));
 
+  // Example: Optimistic update for marking attendance (pseudo-code, extend as needed)
+  // const markAttendance = async (sessionId: string, attending: boolean) => {
+  //   // Optimistically update local state
+  //   setSessions(prevSessions =>
+  //     prevSessions.map(session =>
+  //       session.id === sessionId ? { ...session, attending } : session
+  //     )
+  //   );
+  //   try {
+  //     // await api.markAttendance(sessionId, attending);
+  //   } catch (e) {
+  //     // Revert if error
+  //     setSessions(prevSessions =>
+  //       prevSessions.map(session =>
+  //         session.id === sessionId ? { ...session, attending: !attending } : session
+  //       )
+  //     );
+  //   }
+  // };
+
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}>
-      <StatusBar style="dark" backgroundColor="#fff" />
+      <StatusBar style="dark" />
       <View style={styles.header}>
         <Text style={styles.title}>Sessions</Text>
         <Text style={styles.subtitle}>
