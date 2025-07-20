@@ -245,10 +245,16 @@ export default function ConnectionDetailsScreen() {
                   ) : bannerMap[connection.profileImage] ? (
                     <Image source={bannerMap[connection.profileImage]} style={{ width: 64, height: 64, borderRadius: 32 }} />
                   ) : (
-                    <Image source={{ uri: connection.profileImage }} style={{ width: 64, height: 64, borderRadius: 32 }} defaultSource={defaultAvatar} />
+                    <Image 
+                      source={{ uri: connection.profileImage }} 
+                      style={{ width: 64, height: 64, borderRadius: 32 }} 
+                      defaultSource={defaultAvatar} 
+                    />
                   )
                 ) : (
-                  <Image source={defaultAvatar} style={{ width: 64, height: 64, borderRadius: 32 }} />
+                  <View style={styles.avatarFallback}>
+                    <User size={32} color="#666" />
+                  </View>
                 )}
               </View>
               <Text style={styles.connectionName}>
@@ -477,6 +483,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  avatarFallback: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   connectionName: {
     fontSize: 24,

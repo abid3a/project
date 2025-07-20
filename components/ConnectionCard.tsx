@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
-import { Building, Heart } from 'lucide-react-native';
+import { Building, Heart, User } from 'lucide-react-native';
 import { Connection } from '@/types';
 
 interface ConnectionCardProps {
@@ -56,10 +56,17 @@ export function ConnectionCard({
             ) : bannerMap[connection.profileImage] ? (
               <Image source={bannerMap[connection.profileImage]} style={styles.avatarImg} />
             ) : (
-              <Image source={{ uri: connection.profileImage }} style={styles.avatarImg} onError={() => {}} defaultSource={defaultAvatar} />
+              <Image 
+                source={{ uri: connection.profileImage }} 
+                style={styles.avatarImg} 
+                onError={() => {}} 
+                defaultSource={defaultAvatar} 
+              />
             )
           ) : (
-            <Image source={defaultAvatar} style={styles.avatarImg} />
+            <View style={styles.avatarFallback}>
+              <User size={24} color="#666" />
+            </View>
           )}
         </View>
         <View style={styles.infoCol}>
@@ -148,7 +155,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   infoCol: {
     flex: 1,
