@@ -268,6 +268,7 @@ export function mapNoteFromSupabase(row: any): Note {
     content: row.content,
     createdAt: row.created_at ? new Date(row.created_at) : new Date(),
     companyUID: row.company_uid,
+    deleted: row.deleted,
   };
 }
 

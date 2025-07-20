@@ -62,6 +62,7 @@ export interface Note {
   content: string;
   createdAt: Date;
   companyUID: string;
+  deleted?: boolean;
 }
 
 export interface Report {

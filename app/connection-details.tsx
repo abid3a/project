@@ -336,15 +336,13 @@ export default function ConnectionDetailsScreen() {
         )}
         <View style={styles.card}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Notes ({notes.length})</Text>
+            <Text style={styles.sectionTitle}>Notes ({notes.filter(note => note.deleted !== true && String(note.deleted).toLowerCase() !== 'true').length})</Text>
             <TouchableOpacity style={styles.addNoteButton} onPress={() => setAddNoteModalVisible(true)}>
               <Plus size={20} color="#fff" />
             </TouchableOpacity>
           </View>
-          {notes.length === 0 && (
-            <Text style={styles.emptyText}>No notes yet.</Text>
-          )}
           {notes
+            .filter(note => note.deleted !== true && String(note.deleted).toLowerCase() !== 'true')
             .slice()
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
             .map((note) => (
@@ -586,6 +584,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    paddingRight: 0,
+    minHeight: 32,
   },
   sectionTitle: {
     fontSize: 18,
@@ -605,8 +605,9 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
-    marginRight: 16,
+    marginLeft: 'auto',
+    marginRight: 0,
+    alignSelf: 'center',
   },
   emptyText: {
     color: '#888',
