@@ -19,6 +19,14 @@ export default function ProfileScreen() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteFirstName, setInviteFirstName] = useState('');
+  const [inviteLastName, setInviteLastName] = useState('');
+  const [inviteCompanyName, setInviteCompanyName] = useState('');
+  const [inviteCompanyUID, setInviteCompanyUID] = useState('');
+  const [invitePassword, setInvitePassword] = useState('');
+  const [inviteRole, setInviteRole] = useState<'Admin' | 'User'>('Admin');
+  const [inviteCohort, setInviteCohort] = useState('');
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -106,17 +114,39 @@ export default function ProfileScreen() {
   );
 
 
-  const handleInviteAdmin = () => {
-    if (!inviteEmail.trim()) {
-      Alert.alert('Error', 'Please enter an email address');
+  const handleInviteAdmin = async () => {
+    if (!inviteFirstName.trim() || !inviteLastName.trim() || !inviteCompanyName.trim() || !inviteCompanyUID.trim() || !inviteEmail.trim() || !invitePassword.trim() || !inviteRole) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    // In a real app, this would send an invitation email
-    Alert.alert(
-      'Invitation Sent',
-      `Admin invitation sent to ${inviteEmail}`,
-      [{ text: 'OK', onPress: () => setInviteEmail('') }]
-    );
+    try {
+      await authService.signup({
+        firstName: inviteFirstName,
+        lastName: inviteLastName,
+        companyName: inviteCompanyName,
+        companyUID: inviteCompanyUID,
+        email: inviteEmail,
+        password: invitePassword,
+        role: inviteRole,
+        cohort: inviteCohort,
+      });
+      Alert.alert('Success', 'User invited successfully');
+      setInviteFirstName('');
+      setInviteLastName('');
+      setInviteCompanyName('');
+      setInviteCompanyUID('');
+      setInviteEmail('');
+      setInvitePassword('');
+      setInviteRole('Admin');
+      setInviteCohort('');
+      // Refresh user list
+      if (user?.role === 'Admin') {
+        const users = await authService.getAllUsers();
+        setUsers(users);
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to invite user');
+    }
   };
 
   const handleLogout = () => {
@@ -228,19 +258,29 @@ export default function ProfileScreen() {
       >
         <GestureHandlerRootView style={{ flex: 1 }}>
           <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
+            <View style={[styles.header, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }]}> 
               <Text style={styles.title}>Admin Panel</Text>
-              <TouchableOpacity style={styles.closeModalButton} onPress={() => setAdminModalVisible(false)}>
+              <TouchableOpacity style={{ position: 'absolute', right: 20, top: 20, padding: 4, zIndex: 10 }} onPress={() => setAdminModalVisible(false)}>
                 <X size={24} color="#000" />
               </TouchableOpacity>
             </View>
             <View style={styles.actionsBar}>
               <TouchableOpacity
                 style={styles.inviteButton}
-                onPress={() => setInviteEmail('')}
+                onPress={() => {
+                  setInviteFirstName('');
+                  setInviteLastName('');
+                  setInviteCompanyName('');
+                  setInviteCompanyUID('');
+                  setInviteEmail('');
+                  setInvitePassword('');
+                  setInviteRole('Admin');
+                  setInviteCohort('');
+                  setInviteModalVisible(true);
+                }}
               >
                 <Plus size={20} color="#fff" />
-                <Text style={styles.inviteButtonText}>Invite Admin</Text>
+                <Text style={styles.inviteButtonText}>Create User</Text>
               </TouchableOpacity>
             </View>
             <FlatList
@@ -283,22 +323,38 @@ export default function ProfileScreen() {
               showsVerticalScrollIndicator={false}
             />
             {/* Invite Admin Modal Content */}
-            {inviteEmail !== '' && (
+            {inviteModalVisible && (
               <View style={styles.inviteModalContent}>
-                <Text style={styles.modalTitle}>Invite Administrator</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter email address"
-                  value={inviteEmail}
-                  onChangeText={setInviteEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                />
-                <TouchableOpacity style={styles.sendButton} onPress={handleInviteAdmin}>
-                  <Text style={styles.sendButtonText}>Send Invitation</Text>
+                <Text style={styles.modalTitle}>Create User</Text>
+                <TextInput style={styles.input} placeholder="First Name" value={inviteFirstName} onChangeText={setInviteFirstName} />
+                <TextInput style={styles.input} placeholder="Last Name" value={inviteLastName} onChangeText={setInviteLastName} />
+                <TextInput style={styles.input} placeholder="Company Name" value={inviteCompanyName} onChangeText={setInviteCompanyName} />
+                <TextInput style={styles.input} placeholder="Company UID" value={inviteCompanyUID} onChangeText={setInviteCompanyUID} />
+                <TextInput style={styles.input} placeholder="Cohort" value={inviteCohort} onChangeText={setInviteCohort} />
+                <TextInput style={styles.input} placeholder="Email" value={inviteEmail} onChangeText={setInviteEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+                <TextInput style={styles.input} placeholder="Password" value={invitePassword} onChangeText={setInvitePassword} secureTextEntry />
+                <View style={{ flexDirection: 'row', marginBottom: 15, width: '100%', justifyContent: 'space-between' }}>
+                  <TouchableOpacity style={[styles.sendButton, { flex: 1, marginRight: 5, backgroundColor: inviteRole === 'Admin' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('Admin')}>
+                    <Text style={[styles.sendButtonText, { color: inviteRole === 'Admin' ? '#fff' : '#666' }]}>Admin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.sendButton, { flex: 1, marginLeft: 5, backgroundColor: inviteRole === 'User' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('User')}>
+                    <Text style={[styles.sendButtonText, { color: inviteRole === 'User' ? '#fff' : '#666' }]}>User</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.sendButton} onPress={async () => { await handleInviteAdmin(); setInviteModalVisible(false); }}>
+                  <Text style={styles.sendButtonText}>Create</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.closeModalButton} onPress={() => setInviteEmail('')}>
+                <TouchableOpacity style={styles.closeModalButton} onPress={() => {
+                  setInviteFirstName('');
+                  setInviteLastName('');
+                  setInviteCompanyName('');
+                  setInviteCompanyUID('');
+                  setInviteEmail('');
+                  setInvitePassword('');
+                  setInviteRole('Admin');
+                  setInviteCohort('');
+                  setInviteModalVisible(false);
+                }}>
                   <Text style={styles.closeButtonText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
@@ -565,6 +621,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 20,
+    marginTop: 32, // Add space below the header
   },
   inviteButton: {
     flexDirection: 'row',

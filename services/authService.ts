@@ -2,6 +2,15 @@ import { User } from '@/types';
 import { fetchUserByEmail, fetchUsers } from './dataService';
 import { supabase } from './supabaseClient';
 
+function generateRandomId(length = 16) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 class AuthService {
   private currentUser: User | null = null;
 
@@ -33,6 +42,7 @@ class AuthService {
       throw new Error('Email already exists');
     }
     const newUser = {
+      id: generateRandomId(),
       ...userData,
       first_name: userData.firstName,
       last_name: userData.lastName,
