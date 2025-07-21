@@ -121,7 +121,6 @@ export default function ConnectionsScreen() {
           <Text style={styles.subtitle}>
             {filteredConnections.length} connection
             {filteredConnections.length !== 1 ? 's' : ''}
-            {user?.role === 'Admin' && ' (All Companies)'}
           </Text>
         </View>
       </SafeAreaView>
