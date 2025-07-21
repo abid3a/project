@@ -58,16 +58,18 @@ interface SessionCardProps {
 export function SessionCard({ session, onPress, fullWidth = false }: SessionCardProps) {
   const [pressed, setPressed] = useState(false);
   const typeColor = getTypeColor(session.type);
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
+  const formatDate = (date: Date | string) => {
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
+  const formatTime = (date: Date | string) => {
+    const d = date instanceof Date ? date : new Date(date);
+    return d.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,

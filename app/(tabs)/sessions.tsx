@@ -296,7 +296,7 @@ export default function SessionsScreen() {
               <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Past</Text>
             </TouchableOpacity>
             {showPast && pastSessions.map(item => (
-              <SessionCard key={item.id} session={{ ...item, mentorIds: Array(mentorCounts[item.id] || 0).fill('') }} onPress={() => handleSessionPress(item)} />
+              <SessionCard key={item.id} session={item} onPress={() => handleSessionPress(item)} />
             ))}
           </View>
         )}
@@ -307,7 +307,7 @@ export default function SessionsScreen() {
               <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Today</Text>
             </TouchableOpacity>
             {showToday && todaySessions.map(item => (
-              <SessionCard key={item.id} session={{ ...item, mentorIds: Array(mentorCounts[item.id] || 0).fill('') }} onPress={() => handleSessionPress(item)} />
+              <SessionCard key={item.id} session={item} onPress={() => handleSessionPress(item)} />
             ))}
           </View>
         )}
@@ -318,7 +318,7 @@ export default function SessionsScreen() {
               <Text style={[styles.sectionTitle, {marginHorizontal: 0, marginLeft: 8}]}>Upcoming</Text>
             </TouchableOpacity>
             {showUpcoming && upcomingSessions.map(item => (
-              <SessionCard key={item.id} session={{ ...item, mentorIds: Array(mentorCounts[item.id] || 0).fill('') }} onPress={() => handleSessionPress(item)} />
+              <SessionCard key={item.id} session={item} onPress={() => handleSessionPress(item)} />
             ))}
           </View>
         )}
