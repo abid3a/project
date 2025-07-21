@@ -143,6 +143,31 @@ export default function MeetingDetailsScreen() {
     });
   };
 
+  // Add a helper to format duration like in session-details
+  function formatDuration(duration: number | string): string {
+    if (typeof duration === 'number') {
+      if (duration >= 1) {
+        return `${duration} hour${duration !== 1 ? 's' : ''}`;
+      } else if (duration > 0) {
+        return `${Math.round(duration * 60)} min`;
+      } else {
+        return '0 min';
+      }
+    } else if (typeof duration === 'string') {
+      const [hours, minutes] = duration.split(':').map(Number);
+      if (hours && hours > 0 && (!minutes || minutes === 0)) {
+        return `${hours} hour${hours !== 1 ? 's' : ''}`;
+      } else if (hours && hours > 0 && minutes && minutes > 0) {
+        return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} min`;
+      } else if ((!hours || hours === 0) && minutes && minutes > 0) {
+        return `${minutes} min`;
+      } else {
+        return '0 min';
+      }
+    }
+    return '';
+  }
+
   if (!meeting) {
     return (
       <SafeAreaView style={styles.container}>
@@ -151,7 +176,7 @@ export default function MeetingDetailsScreen() {
           <TouchableOpacity onPress={() => router.back()}>
             <X size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.title}>Meeting Not Found</Text>
+          <Text style={styles.title} selectable={true}>Meeting Not Found</Text>
         </View>
       </SafeAreaView>
     );
@@ -170,53 +195,57 @@ export default function MeetingDetailsScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.card, styles.cardFirst]}>
-          <Text style={styles.meetingTitle}>{meeting.title}</Text>
+          <Text style={styles.meetingTitle} selectable={true}>{meeting.title}</Text>
           <View style={[styles.typeTag, { backgroundColor: getTypeColor(meeting.type).bg }]}>
-            <Text style={[styles.typeText, { color: getTypeColor(meeting.type).text }]}>{meeting.type}</Text>
+            <Text style={[styles.typeText, { color: getTypeColor(meeting.type).text }]} selectable={true}>{meeting.type}</Text>
           </View>
         </View>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>About</Text>
+          <Text style={styles.sectionTitle} selectable={true}>About</Text>
           <View style={styles.details}>
             <View style={styles.detailRow}>
               <Calendar size={20} color="#000" />
-              <Text style={styles.detailText}>{formatDate(meeting.date)}</Text>
+              <Text style={styles.detailText} selectable={true}>{formatDate(meeting.date)}</Text>
             </View>
             <View style={styles.detailRow}>
               <Clock size={20} color="#000" />
-              <Text style={styles.detailText}>
-                {formatTime(meeting.date)} • {meeting.duration} minutes
+              <Text style={styles.detailText} selectable={true}>
+                {formatTime(meeting.date)} • {formatDuration(meeting.duration)}
               </Text>
             </View>
             <View style={styles.detailRow}>
               <MapPin size={20} color="#000" />
-              <Text style={styles.detailText}>{meeting.location}</Text>
+              <Text style={styles.detailText} selectable={true}>{meeting.location}</Text>
             </View>
           </View>
-          <View style={styles.divider} />
-          <Text style={styles.description}>{meeting.description}</Text>
+          {meeting.description ? (
+            <>
+              <Text style={styles.sectionTitle} selectable={true}>Description</Text>
+              <Text style={styles.description} selectable={true}>{meeting.description}</Text>
+            </>
+          ) : null}
+          {attendees.length > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={styles.sectionTitle} selectable={true}>
+                Attendee{attendees.length !== 1 ? 's' : ''} ({attendees.length})
+              </Text>
+              {attendees.map((attendee) => {
+                const liveAttendee = connections.find(c => c.id === attendee.id) || attendee;
+                return (
+                  <ConnectionCard
+                    key={attendee.id}
+                    connection={liveAttendee}
+                    sessionCount={attendeeCounts[attendee.id]?.sessions}
+                    meetingCount={attendeeCounts[attendee.id]?.meetings}
+                    onPress={() => handleConnectionPress(attendee)}
+                    showFavoriteButton={true}
+                    onToggleFavorite={() => toggleFavorite(attendee.id)}
+                  />
+                );
+              })}
+            </View>
+          )}
         </View>
-        {attendees.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>
-              Attendee{attendees.length !== 1 ? 's' : ''} ({attendees.length})
-            </Text>
-            {attendees.map((attendee) => {
-              const liveAttendee = connections.find(c => c.id === attendee.id) || attendee;
-              return (
-                <ConnectionCard
-                  key={attendee.id}
-                  connection={liveAttendee}
-                  sessionCount={attendeeCounts[attendee.id]?.sessions}
-                  meetingCount={attendeeCounts[attendee.id]?.meetings}
-                  onPress={() => handleConnectionPress(attendee)}
-                  showFavoriteButton={true}
-                  onToggleFavorite={() => toggleFavorite(attendee.id)}
-                />
-              );
-            })}
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );

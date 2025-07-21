@@ -199,53 +199,57 @@ export default function SessionDetailsScreen() {
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <View style={[styles.card, styles.cardFirst]}>
-          <Text style={styles.sessionTitle}>{session.name}</Text>
+          <Text style={styles.sessionTitle} selectable={true}>{session.name}</Text>
           <View style={[styles.typeTag, { backgroundColor: getTypeColor(session.type).bg }]}>
-            <Text style={[styles.typeText, { color: getTypeColor(session.type).text }]}>{session.type}</Text>
+            <Text style={[styles.typeText, { color: getTypeColor(session.type).text }]} selectable={true}>{session.type}</Text>
           </View>
         </View>
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>About</Text>
+          <Text style={styles.sectionTitle} selectable={true}>About</Text>
           <View style={styles.details}>
             <View style={styles.detailRow}>
               <Calendar size={20} color="#000" />
-              <Text style={styles.detailText}>{formatDate(session.date)}</Text>
+              <Text style={styles.detailText} selectable={true}>{formatDate(session.date)}</Text>
             </View>
             <View style={styles.detailRow}>
               <Clock size={20} color="#000" />
-              <Text style={styles.detailText}>
+              <Text style={styles.detailText} selectable={true}>
                 {formatTime(session.date)} • {formatDuration(session.duration)}
               </Text>
             </View>
             <View style={styles.detailRow}>
               <MapPin size={20} color="#000" />
-              <Text style={styles.detailText}>{session.location}</Text>
+              <Text style={styles.detailText} selectable={true}>{session.location}</Text>
             </View>
           </View>
-          <View style={styles.divider} />
-          <Text style={styles.description}>{session.description}</Text>
+          {session.description ? (
+            <>
+              <Text style={styles.sectionTitle} selectable={true}>Description</Text>
+              <Text style={styles.description} selectable={true}>{session.description}</Text>
+            </>
+          ) : null}
+          {mentors.length > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={styles.sectionTitle} selectable={true}>
+                Mentor{mentors.length !== 1 ? 's' : ''} ({mentors.length})
+              </Text>
+              {mentors.map((mentor) => {
+                const liveMentor = connections.find(c => c.id === mentor.id) || mentor;
+                return (
+                  <ConnectionCard
+                    key={mentor.id}
+                    connection={liveMentor}
+                    sessionCount={mentorCounts[mentor.id]?.sessions}
+                    meetingCount={mentorCounts[mentor.id]?.meetings}
+                    onPress={() => handleConnectionPress(mentor)}
+                    showFavoriteButton={true}
+                    onToggleFavorite={() => toggleFavorite(mentor.id)}
+                  />
+                );
+              })}
+            </View>
+          )}
         </View>
-        {mentors.length > 0 && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>
-              Mentor{mentors.length !== 1 ? 's' : ''} ({mentors.length})
-            </Text>
-            {mentors.map((mentor) => {
-              const liveMentor = connections.find(c => c.id === mentor.id) || mentor;
-              return (
-                <ConnectionCard
-                  key={mentor.id}
-                  connection={liveMentor}
-                  sessionCount={mentorCounts[mentor.id]?.sessions}
-                  meetingCount={mentorCounts[mentor.id]?.meetings}
-                  onPress={() => handleConnectionPress(mentor)}
-                  showFavoriteButton={true}
-                  onToggleFavorite={() => toggleFavorite(mentor.id)}
-                />
-              );
-            })}
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
