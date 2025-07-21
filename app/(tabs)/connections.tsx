@@ -180,6 +180,7 @@ export default function ConnectionsScreen() {
                   })
                 }
                 onToggleFavorite={() => toggleFavorite(conn.id)}
+                fullWidth={true}
               />
             ))
           )}

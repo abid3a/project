@@ -240,6 +240,7 @@ export default function MeetingDetailsScreen() {
                     onPress={() => handleConnectionPress(attendee)}
                     showFavoriteButton={true}
                     onToggleFavorite={() => toggleFavorite(attendee.id)}
+                    fullWidth={true}
                   />
                 );
               })}

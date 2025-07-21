@@ -52,9 +52,10 @@ function getTypeColor(type: string): { bg: string; text: string } {
 interface SessionCardProps {
   session: Session;
   onPress: () => void;
+  fullWidth?: boolean;
 }
 
-export function SessionCard({ session, onPress }: SessionCardProps) {
+export function SessionCard({ session, onPress, fullWidth = false }: SessionCardProps) {
   const [pressed, setPressed] = useState(false);
   const typeColor = getTypeColor(session.type);
   const formatDate = (date: Date) => {
@@ -103,6 +104,7 @@ export function SessionCard({ session, onPress }: SessionCardProps) {
     <Pressable
       style={({ pressed: isPressed }) => [
         styles.card,
+        { marginHorizontal: fullWidth ? 0 : 16 },
         (pressed || isPressed) && styles.cardPressed,
       ]}
       onPress={onPress}

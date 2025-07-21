@@ -319,6 +319,7 @@ export default function ConnectionDetailsScreen() {
                 key={session.id}
                 session={session}
                 onPress={() => handleSessionPress(session)}
+                fullWidth={true}
               />
             ))}
           </View>
@@ -335,6 +336,7 @@ export default function ConnectionDetailsScreen() {
                 key={meeting.id}
                 meeting={meeting}
                 onPress={() => handleMeetingPress(meeting)}
+                fullWidth={true}
               />
             ))}
           </View>

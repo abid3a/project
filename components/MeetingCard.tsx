@@ -52,9 +52,10 @@ function getTypeColor(type: string): { bg: string; text: string } {
 interface MeetingCardProps {
   meeting: Meeting;
   onPress: () => void;
+  fullWidth?: boolean;
 }
 
-export function MeetingCard({ meeting, onPress }: MeetingCardProps) {
+export function MeetingCard({ meeting, onPress, fullWidth = false }: MeetingCardProps) {
   const [pressed, setPressed] = useState(false);
   const typeColor = getTypeColor(meeting.type);
   const formatDate = (date: string | Date) => {
@@ -104,6 +105,7 @@ export function MeetingCard({ meeting, onPress }: MeetingCardProps) {
     <Pressable
       style={({ pressed: isPressed }) => [
         styles.card,
+        { marginHorizontal: fullWidth ? 0 : 16 },
         (pressed || isPressed) && styles.cardPressed,
       ]}
       onPress={onPress}

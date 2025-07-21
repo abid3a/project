@@ -10,6 +10,7 @@ interface ConnectionCardProps {
   showFavoriteButton?: boolean;
   sessionCount?: number | undefined;
   meetingCount?: number;
+  fullWidth?: boolean;
 }
 
 const typeColors: Record<string, { bg: string; text: string }> = {
@@ -37,7 +38,8 @@ export function ConnectionCard({
   onToggleFavorite,
   showFavoriteButton = true,
   sessionCount,
-  meetingCount
+  meetingCount,
+  fullWidth = false
 }: ConnectionCardProps) {
   const [pressed, setPressed] = useState(false);
   const typeColor = typeColors[connection.type] || typeColors.Default;
@@ -45,6 +47,7 @@ export function ConnectionCard({
     <Pressable
       style={({ pressed: isPressed }) => [
         styles.card,
+        { marginHorizontal: fullWidth ? 0 : 16 },
         (pressed || isPressed) && styles.cardPressed,
       ]}
       onPress={onPress}
@@ -128,16 +131,15 @@ export function ConnectionCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e3e8ef',
-    padding: 22,
-    marginVertical: 10,
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.07,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
     position: 'relative',
   },
   cardPressed: {

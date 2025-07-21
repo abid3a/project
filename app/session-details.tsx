@@ -244,6 +244,7 @@ export default function SessionDetailsScreen() {
                     onPress={() => handleConnectionPress(mentor)}
                     showFavoriteButton={true}
                     onToggleFavorite={() => toggleFavorite(mentor.id)}
+                    fullWidth={true}
                   />
                 );
               })}
