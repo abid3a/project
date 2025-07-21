@@ -42,7 +42,7 @@ export default function MeetingsScreen() {
 
   useEffect(() => {
     filterAndSearchMeetings();
-  }, [selectedAttendeeId, selectedCompanyUID]);
+  }, [meetings, selectedType, searchQuery, selectedAttendeeId, selectedCompanyUID]);
 
   useEffect(() => {
     // Fetch attendee counts for filtered meetings
