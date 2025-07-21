@@ -141,7 +141,7 @@ export function SessionCard({ session, onPress, fullWidth = false }: SessionCard
         <View style={styles.detailRow}>
           <User size={16} color="#000" />
           <Text style={styles.detailText}>
-            {session.mentorIds.length} mentor{session.mentorIds.length !== 1 ? 's' : ''}
+            {(session.mentorIds ? session.mentorIds.length : 0)} mentor{(session.mentorIds ? session.mentorIds.length : 0) !== 1 ? 's' : ''}
           </Text>
         </View>
       </View>
