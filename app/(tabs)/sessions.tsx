@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, SafeAreaView, FlatList } from 'react-native';
 import { GestureHandlerRootView , PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
@@ -8,7 +8,7 @@ import FilterBar from '@/components/FilterBar';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { fetchSessions, fetchAllSessions, fetchSessionMentors, getUniqueTypes, filterByType, getUniqueCohorts } from '@/services/dataService';
+import { fetchSessions, fetchAllSessions, fetchSessionMentors, getUniqueTypes, filterByType, getUniqueCohorts, fetchUsers } from '@/services/dataService';
 import { Session, Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +28,9 @@ export default function SessionsScreen() {
   const [mentorCounts, setMentorCounts] = useState<Record<string, number>>({});
   const [availableCohorts, setAvailableCohorts] = useState<string[]>([]);
   const [showCohortFilter, setShowCohortFilter] = useState(false);
+  const [selectedMentorId, setSelectedMentorId] = useState<string | null>(null);
+  const [showMentorFilter, setShowMentorFilter] = useState(false);
+  const [availableMentors, setAvailableMentors] = useState<any[]>([]); // Adjust type as needed
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -58,12 +61,15 @@ export default function SessionsScreen() {
     }
   }, [filteredSessions]);
 
+  useEffect(() => {
+    filterAndSearchSessions();
+  }, [selectedMentorId]);
+
   const loadSessions = async () => {
     if (!user) {
       setSessions([]);
       return;
     }
-    
     try {
       let data;
       if (user.role === 'Admin') {
@@ -79,20 +85,22 @@ export default function SessionsScreen() {
         const normalizedCohort = cohort.trim().toLowerCase();
         data = await fetchSessions(normalizedCohort);
       }
-      
-      // Map snake_case to camelCase and parse date
-      const mapped = (data || []).map((session: any) => ({
-        ...session,
-        id: session.id,
-        name: session.name,
-        date: session.date ? new Date(session.date) : new Date(),
-        duration: session.duration,
-        type: session.type,
-        location: session.location,
-        description: session.description,
-        companyUID: session.company_uid,
-        mentorIds: session.mentor_ids || [],
-        cohort: session.cohort,
+      // Map snake_case to camelCase and parse date, and fetch mentorIds for each session
+      const mapped = await Promise.all((data || []).map(async (session: any) => {
+        const mentorIds = await fetchSessionMentors(session.id);
+        return {
+          ...session,
+          id: session.id,
+          name: session.name,
+          date: session.date ? new Date(session.date) : new Date(),
+          duration: session.duration,
+          type: session.type,
+          location: session.location,
+          description: session.description,
+          companyUID: session.company_uid,
+          mentorIds: mentorIds || [],
+          cohort: session.cohort,
+        };
       }));
       setSessions(mapped);
     } catch (error) {
@@ -117,6 +125,11 @@ export default function SessionsScreen() {
       filtered = filtered.filter(session => 
         session.cohort?.toLowerCase() === selectedCohort.toLowerCase()
       );
+    }
+    
+    // Apply mentor filter (admin only)
+    if (user?.role === 'Admin' && selectedMentorId) {
+      filtered = filtered.filter(session => session.mentorIds && session.mentorIds.includes(selectedMentorId));
     }
     
     // Apply type filter
@@ -210,6 +223,11 @@ export default function SessionsScreen() {
   //   }
   // };
 
+  function getMentorName(id: string) {
+    const mentor = connections.find(a => a.id === id);
+    return mentor ? `${mentor.firstName} ${mentor.lastName}` : id;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}>
       <StatusBar style="dark" />
@@ -217,7 +235,6 @@ export default function SessionsScreen() {
         <Text style={styles.title}>Sessions</Text>
         <Text style={styles.subtitle}>
           {filteredSessions.length} session{filteredSessions.length !== 1 ? 's' : ''}
-          {user?.role === 'Admin' && selectedCohort && ` (${selectedCohort})`}
         </Text>
       </View>
 
@@ -227,19 +244,31 @@ export default function SessionsScreen() {
         onTypeSelect={setSelectedType}
       />
 
-      {/* Admin Cohort Filter */}
+      {/* Admin Cohort & Mentor Filter */}
       {user?.role === 'Admin' && (
         <View style={styles.adminFilterContainer}>
-          <TouchableOpacity
-            style={styles.cohortFilterButton}
-            onPress={() => setShowCohortFilter(true)}
-          >
-            <Filter size={20} color="#000" />
-            <Text style={styles.cohortFilterText}>
-              {selectedCohort ? `Cohort: ${selectedCohort}` : 'Filter by Cohort'}
-            </Text>
-            <ChevronDown size={16} color="#000" />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={styles.cohortFilterButton}
+              onPress={() => setShowCohortFilter(true)}
+            >
+              <Filter size={20} color="#000" />
+              <Text style={styles.cohortFilterText}>
+                {selectedCohort ? `Cohort: ${selectedCohort}` : 'Filter by Cohort'}
+              </Text>
+              <ChevronDown size={16} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cohortFilterButton}
+              onPress={() => setShowMentorFilter(true)}
+            >
+              <Users size={20} color="#000" />
+              <Text style={styles.cohortFilterText}>
+                {selectedMentorId ? `Mentor: ${getMentorName(selectedMentorId)}` : 'Filter by Mentor'}
+              </Text>
+              <ChevronDown size={16} color="#000" />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -306,10 +335,19 @@ export default function SessionsScreen() {
           <SafeAreaView style={styles.container}>
             <View style={styles.header}>
               <Text style={styles.title}>Filter by Cohort</Text>
-              <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowCohortFilter(false)}>
+              <TouchableOpacity style={[styles.closeModalButton, { position: 'absolute', right: 20, top: 20 }]} onPress={() => setShowCohortFilter(false)}>
                 <X size={24} color="#000" />
               </TouchableOpacity>
             </View>
+            <TouchableOpacity
+              style={[styles.cohortItem, { backgroundColor: '#f5f7fa', borderBottomWidth: 0 }]}
+              onPress={() => {
+                setSelectedCohort(null);
+                setShowCohortFilter(false);
+              }}
+            >
+              <Text style={[styles.cohortItemText, { color: '#1976d2', fontWeight: 'bold' }]}>Reset Filter</Text>
+            </TouchableOpacity>
             <FlatList
               data={availableCohorts}
               keyExtractor={(item) => item}
@@ -332,6 +370,67 @@ export default function SessionsScreen() {
                   </Text>
                 </TouchableOpacity>
               )}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            />
+          </SafeAreaView>
+        </GestureHandlerRootView>
+      </Modal>
+
+      {/* Mentor Filter Modal */}
+      <Modal
+        visible={showMentorFilter}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowMentorFilter(false)}
+      >
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Filter by Mentor</Text>
+              <TouchableOpacity style={[styles.closeModalButton, { position: 'absolute', right: 20, top: 20 }]} onPress={() => setShowMentorFilter(false)}>
+                <X size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[styles.cohortItem, { backgroundColor: '#f5f7fa', borderBottomWidth: 0 }]}
+              onPress={() => {
+                setSelectedMentorId(null);
+                setShowMentorFilter(false);
+              }}
+            >
+              <Text style={[styles.cohortItemText, { color: '#1976d2', fontWeight: 'bold' }]}>Reset Filter</Text>
+            </TouchableOpacity>
+            <FlatList
+              data={[...connections].sort((a, b) => {
+                const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+                const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+                return nameA.localeCompare(nameB);
+              })}
+              keyExtractor={(item) => item.id}
+              renderItem={useCallback(({ item }: { item: Connection }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.cohortItem,
+                    selectedMentorId === item.id && styles.selectedCohortItem
+                  ]}
+                  onPress={() => {
+                    const newValue = selectedMentorId === item.id ? null : item.id;
+                    setSelectedMentorId(newValue);
+                    setShowMentorFilter(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.cohortItemText,
+                    selectedMentorId === item.id && styles.selectedCohortItemText
+                  ]}>
+                    {item.firstName} {item.lastName}
+                  </Text>
+                </TouchableOpacity>
+              ), [selectedMentorId])}
+              getItemLayout={(_, index) => ({ length: 56, offset: 56 * index, index })}
+              initialNumToRender={20}
+              maxToRenderPerBatch={30}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
             />

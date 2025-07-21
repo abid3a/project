@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, SafeAreaView, FlatList } from 'react-native';
 import { GestureHandlerRootView , PanGestureHandler, State } from 'react-native-gesture-handler';
 import { useRouter } from 'expo-router';
@@ -8,7 +8,7 @@ import FilterBar from '@/components/FilterBar';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { fetchMeetings, fetchAllMeetings, fetchMeetingAttendees, getUniqueTypes, filterByType, getUniqueCompanyUIDs } from '@/services/dataService';
+import { fetchMeetings, fetchAllMeetings, fetchMeetingAttendees, getUniqueTypes, filterByType, getUniqueCompanyUIDs, fetchUsers } from '@/services/dataService';
 import { Meeting, Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +28,9 @@ export default function MeetingsScreen() {
   const [attendeeCounts, setAttendeeCounts] = useState<Record<string, number>>({});
   const [availableCompanyUIDs, setAvailableCompanyUIDs] = useState<string[]>([]);
   const [showCompanyFilter, setShowCompanyFilter] = useState(false);
+  const [selectedAttendeeId, setSelectedAttendeeId] = useState<string | null>(null);
+  const [showAttendeeFilter, setShowAttendeeFilter] = useState(false);
+  const [availableAttendees, setAvailableAttendees] = useState<any[]>([]); // Adjust type as needed
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -39,7 +42,7 @@ export default function MeetingsScreen() {
 
   useEffect(() => {
     filterAndSearchMeetings();
-  }, [meetings, selectedType, selectedCompanyUID, searchQuery]);
+  }, [selectedAttendeeId, selectedCompanyUID]);
 
   useEffect(() => {
     // Fetch attendee counts for filtered meetings
@@ -116,6 +119,11 @@ export default function MeetingsScreen() {
       filtered = filtered.filter(meeting => 
         meeting.companyUID === selectedCompanyUID
       );
+    }
+    
+    // Apply attendee filter (admin only)
+    if (user?.role === 'Admin' && selectedAttendeeId) {
+      filtered = filtered.filter(meeting => meeting.attendeeIds && meeting.attendeeIds.includes(selectedAttendeeId));
     }
     
     // Apply type filter
@@ -206,6 +214,11 @@ export default function MeetingsScreen() {
   //   }
   // };
 
+  function getAttendeeName(id: string) {
+    const attendee = connections.find(a => a.id === id);
+    return attendee ? `${attendee.firstName} ${attendee.lastName}` : id;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { paddingTop: insets.top, backgroundColor: '#fff' }]}>
       <StatusBar style="dark" />
@@ -213,8 +226,6 @@ export default function MeetingsScreen() {
         <Text style={styles.title}>Meetings</Text>
         <Text style={styles.subtitle}>
           {filteredMeetings.length} meeting{filteredMeetings.length !== 1 ? 's' : ''}
-          {user?.role === 'Admin' && selectedCompanyUID && ` (Company: ${selectedCompanyUID})`}
-          {user?.role === 'Admin' && !selectedCompanyUID && ' (All Companies)'}
         </Text>
       </View>
 
@@ -224,19 +235,50 @@ export default function MeetingsScreen() {
         onTypeSelect={setSelectedType}
       />
 
-      {/* Admin Company Filter */}
+      {/* Admin Company & Attendee Filter */}
       {user?.role === 'Admin' && (
         <View style={styles.adminFilterContainer}>
-          <TouchableOpacity
-            style={styles.companyFilterButton}
-            onPress={() => setShowCompanyFilter(true)}
-          >
-            <Filter size={20} color="#000" />
-            <Text style={styles.companyFilterText}>
-              {selectedCompanyUID ? `Company: ${selectedCompanyUID}` : 'Filter by Company'}
-            </Text>
-            <ChevronDown size={16} color="#000" />
-          </TouchableOpacity>
+          {/* Filter tags */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+            {selectedCompanyUID && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Company: {selectedCompanyUID}</Text>
+                <TouchableOpacity onPress={() => setSelectedCompanyUID(null)} style={styles.filterTagClose}>
+                  <X size={14} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
+            {selectedAttendeeId && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Attendee: {getAttendeeName(selectedAttendeeId)}</Text>
+                <TouchableOpacity onPress={() => setSelectedAttendeeId(null)} style={styles.filterTagClose}>
+                  <X size={14} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={styles.companyFilterButton}
+              onPress={() => setShowCompanyFilter(true)}
+            >
+              <Filter size={20} color="#000" />
+              <Text style={styles.companyFilterText}>
+                {selectedCompanyUID ? `Company: ${selectedCompanyUID}` : 'Filter by Company'}
+              </Text>
+              <ChevronDown size={16} color="#000" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.companyFilterButton}
+              onPress={() => setShowAttendeeFilter(true)}
+            >
+              <Users size={20} color="#000" />
+              <Text style={styles.companyFilterText}>
+                {selectedAttendeeId ? `Attendee: ${getAttendeeName(selectedAttendeeId)}` : 'Filter by Attendee'}
+              </Text>
+              <ChevronDown size={16} color="#000" />
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -303,10 +345,19 @@ export default function MeetingsScreen() {
           <SafeAreaView style={styles.container}>
             <View style={styles.header}>
               <Text style={styles.title}>Filter by Company</Text>
-              <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowCompanyFilter(false)}>
+              <TouchableOpacity style={[styles.closeModalButton, { position: 'absolute', right: 20, top: 20 }]} onPress={() => setShowCompanyFilter(false)}>
                 <X size={24} color="#000" />
               </TouchableOpacity>
             </View>
+            <TouchableOpacity
+              style={[styles.companyItem, { backgroundColor: '#f5f7fa', borderBottomWidth: 0 }]}
+              onPress={() => {
+                setSelectedCompanyUID(null);
+                setShowCompanyFilter(false);
+              }}
+            >
+              <Text style={[styles.companyItemText, { color: '#1976d2', fontWeight: 'bold' }]}>Reset Filter</Text>
+            </TouchableOpacity>
             <FlatList
               data={availableCompanyUIDs}
               keyExtractor={(item) => item}
@@ -329,6 +380,67 @@ export default function MeetingsScreen() {
                   </Text>
                 </TouchableOpacity>
               )}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            />
+          </SafeAreaView>
+        </GestureHandlerRootView>
+      </Modal>
+
+      {/* Attendee Filter Modal */}
+      <Modal
+        visible={showAttendeeFilter}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowAttendeeFilter(false)}
+      >
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Filter by Attendee</Text>
+              <TouchableOpacity style={[styles.closeModalButton, { position: 'absolute', right: 20, top: 20 }]} onPress={() => setShowAttendeeFilter(false)}>
+                <X size={24} color="#000" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={[styles.companyItem, { backgroundColor: '#f5f7fa', borderBottomWidth: 0 }]}
+              onPress={() => {
+                setSelectedAttendeeId(null);
+                setShowAttendeeFilter(false);
+              }}
+            >
+              <Text style={[styles.companyItemText, { color: '#1976d2', fontWeight: 'bold' }]}>Reset Filter</Text>
+            </TouchableOpacity>
+            <FlatList
+              data={[...connections].sort((a, b) => {
+                const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+                const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+                return nameA.localeCompare(nameB);
+              })}
+              keyExtractor={(item) => item.id}
+              renderItem={useCallback(({ item }: { item: Connection }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.companyItem,
+                    selectedAttendeeId === item.id && styles.selectedCompanyItem
+                  ]}
+                  onPress={() => {
+                    const newValue = selectedAttendeeId === item.id ? null : item.id;
+                    setSelectedAttendeeId(newValue);
+                    setShowAttendeeFilter(false);
+                  }}
+                >
+                  <Text style={[
+                    styles.companyItemText,
+                    selectedAttendeeId === item.id && styles.selectedCompanyItemText
+                  ]}>
+                    {item.firstName} {item.lastName}
+                  </Text>
+                </TouchableOpacity>
+              ), [selectedAttendeeId])}
+              getItemLayout={(_, index) => ({ length: 56, offset: 56 * index, index })}
+              initialNumToRender={20}
+              maxToRenderPerBatch={30}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
             />
@@ -514,5 +626,26 @@ const styles = StyleSheet.create({
   selectedCompanyItemText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  filterTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1976d2',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginRight: 8,
+    marginBottom: 4,
+  },
+  filterTagText: {
+    color: '#fff',
+    fontSize: 13,
+    marginRight: 4,
+  },
+  filterTagClose: {
+    marginLeft: 2,
+    padding: 2,
+    borderRadius: 10,
+    backgroundColor: '#1565c0',
   },
 });
