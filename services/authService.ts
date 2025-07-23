@@ -96,6 +96,37 @@ class AuthService {
       cohort: user.cohort, // <-- Add this line
     }));
   }
+
+  async updateUserRole(userId: string, newRole: 'Admin' | 'User'): Promise<void> {
+    const { error } = await supabase
+      .from('users')
+      .update({ role: newRole })
+      .eq('id', userId);
+    if (error) throw error;
+  }
+
+  async updateUserInfo(userId: string, updates: { firstName: string; lastName: string; companyName: string; companyUID: string; cohort: string; role: 'Admin' | 'User'; }): Promise<void> {
+    const { error } = await supabase
+      .from('users')
+      .update({
+        first_name: updates.firstName,
+        last_name: updates.lastName,
+        company_name: updates.companyName,
+        company_uid: updates.companyUID,
+        cohort: updates.cohort,
+        role: updates.role,
+      })
+      .eq('id', userId);
+    if (error) throw error;
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+    if (error) throw error;
+  }
 }
 
 export const authService = new AuthService();

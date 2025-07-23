@@ -3,12 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, FlatList, Linking } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import type { User as UserType, Report } from '@/types';
-import { Building, Mail, LogOut, CreditCard as Edit, Shield, Plus, X, User, FileText, Download, Calendar } from 'lucide-react-native';
+import { Building, Mail, LogOut, CreditCard as Edit, Shield, Plus, X, User, FileText, Download, Calendar, Trash2 } from 'lucide-react-native';
 import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 import { authService } from '@/services/authService';
 import { fetchReports } from '@/services/dataService';
-import { ScrollView, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { ScrollView, Modal, TextInput, KeyboardAvoidingView, Platform, TouchableWithoutFeedback } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,6 +27,15 @@ export default function ProfileScreen() {
   const [inviteRole, setInviteRole] = useState<'Admin' | 'User'>('Admin');
   const [inviteCohort, setInviteCohort] = useState('');
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [userInfoModalVisible, setUserInfoModalVisible] = useState(false);
+  const [editUserModalVisible, setEditUserModalVisible] = useState(false);
+  const [editUserRole, setEditUserRole] = useState<'Admin' | 'User'>('User');
+  const [editUserFirstName, setEditUserFirstName] = useState('');
+  const [editUserLastName, setEditUserLastName] = useState('');
+  const [editUserCompanyName, setEditUserCompanyName] = useState('');
+  const [editUserCompanyUID, setEditUserCompanyUID] = useState('');
+  const [editUserCohort, setEditUserCohort] = useState('');
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -139,6 +148,7 @@ export default function ProfileScreen() {
       setInvitePassword('');
       setInviteRole('Admin');
       setInviteCohort('');
+      setInviteModalVisible(false); // Only close modal on success
       // Refresh user list
       if (user?.role === 'Admin') {
         const users = await authService.getAllUsers();
@@ -274,7 +284,7 @@ export default function ProfileScreen() {
                   setInviteCompanyUID('');
                   setInviteEmail('');
                   setInvitePassword('');
-                  setInviteRole('Admin');
+                  setInviteRole('User'); // default to User
                   setInviteCohort('');
                   setInviteModalVisible(true);
                 }}
@@ -287,86 +297,50 @@ export default function ProfileScreen() {
               data={users}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
-                <View style={styles.userCard}>
-                  <View style={styles.userHeader}>
-                    <View style={styles.userAvatar}>
-                      <User size={24} color="#000" />
-                    </View>
-                    <View style={styles.userInfo}>
-                      <Text style={styles.modalUserName}>{item.firstName} {item.lastName}</Text>
-                      <Text style={styles.modalUserEmail}>{item.email}</Text>
-                      <View style={styles.userMeta}>
-                        <Building size={14} color="#000" />
-                        <Text style={styles.userCompany}>{item.companyName}</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedUser(item);
+                    setUserInfoModalVisible(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.userCard}>
+                    <View style={styles.userHeader}>
+                      <View style={styles.userAvatar}>
+                        <User size={24} color="#000" />
+                      </View>
+                      <View style={styles.userInfo}>
+                        <Text style={styles.modalUserName}>{item.firstName} {item.lastName}</Text>
+                        <Text style={styles.modalUserEmail}>{item.email}</Text>
+                        <View style={styles.userMeta}>
+                          <Building size={14} color="#000" />
+                          <Text style={styles.userCompany}>{item.companyName}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.userRole}>
+                        {item.role === 'Admin' ? (
+                          <View style={styles.adminTag}>
+                            <Shield size={14} color="#fff" />
+                            <Text style={styles.adminText}>Admin</Text>
+                          </View>
+                        ) : (
+                          <View style={styles.userTag}>
+                            <Text style={styles.userText}>User</Text>
+                          </View>
+                        )}
                       </View>
                     </View>
-                    <View style={styles.userRole}>
-                      {item.role === 'Admin' ? (
-                        <View style={styles.adminTag}>
-                          <Shield size={14} color="#fff" />
-                          <Text style={styles.adminText}>Admin</Text>
-                        </View>
-                      ) : (
-                        <View style={styles.userTag}>
-                          <Text style={styles.userText}>User</Text>
-                        </View>
-                      )}
+                    <View style={styles.userDetails}>
+                      <Text style={styles.detailText}>Company ID: {item.companyUID}</Text>
+                      <Text style={styles.detailText}>Joined: {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}</Text>
                     </View>
                   </View>
-                  <View style={styles.userDetails}>
-                    <Text style={styles.detailText}>Company ID: {item.companyUID}</Text>
-                    <Text style={styles.detailText}>Joined: {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}</Text>
-                  </View>
-                </View>
+                </TouchableOpacity>
               )}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
             />
-            {/* Invite Admin Modal Content */}
-            {inviteModalVisible && (
-              <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={{ flex: 1 }}
-              >
-                <ScrollView
-                  contentContainerStyle={[styles.inviteModalContent, { flexGrow: 1 }]}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  <Text style={styles.modalTitle}>Create User</Text>
-                  <TextInput style={styles.input} placeholder="First Name" value={inviteFirstName} onChangeText={setInviteFirstName} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Last Name" value={inviteLastName} onChangeText={setInviteLastName} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Company Name" value={inviteCompanyName} onChangeText={setInviteCompanyName} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Company UID" value={inviteCompanyUID} onChangeText={setInviteCompanyUID} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Cohort" value={inviteCohort} onChangeText={setInviteCohort} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Email" value={inviteEmail} onChangeText={setInviteEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Password" value={invitePassword} onChangeText={setInvitePassword} secureTextEntry placeholderTextColor="#888" />
-                  <View style={{ flexDirection: 'row', marginBottom: 15, width: '100%', justifyContent: 'space-between' }}>
-                    <TouchableOpacity style={[styles.sendButton, { flex: 1, marginRight: 5, backgroundColor: inviteRole === 'Admin' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('Admin')}>
-                      <Text style={[styles.sendButtonText, { color: inviteRole === 'Admin' ? '#fff' : '#666' }]}>Admin</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.sendButton, { flex: 1, marginLeft: 5, backgroundColor: inviteRole === 'User' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('User')}>
-                      <Text style={[styles.sendButtonText, { color: inviteRole === 'User' ? '#fff' : '#666' }]}>User</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <TouchableOpacity style={styles.sendButton} onPress={async () => { await handleInviteAdmin(); setInviteModalVisible(false); }}>
-                    <Text style={styles.sendButtonText}>Create</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.closeModalButton} onPress={() => {
-                    setInviteFirstName('');
-                    setInviteLastName('');
-                    setInviteCompanyName('');
-                    setInviteCompanyUID('');
-                    setInviteEmail('');
-                    setInvitePassword('');
-                    setInviteRole('Admin');
-                    setInviteCohort('');
-                    setInviteModalVisible(false);
-                  }}>
-                    <Text style={styles.closeButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              </KeyboardAvoidingView>
-            )}
+            {/* Invite Modal is now a true Modal rendered outside the admin modal */}
           </SafeAreaView>
         </GestureHandlerRootView>
       </Modal>
@@ -396,6 +370,185 @@ export default function ProfileScreen() {
             />
           </SafeAreaView>
         </GestureHandlerRootView>
+      </Modal>
+      {/* Invite Modal is now a true Modal rendered outside the admin modal */}
+      <Modal
+        visible={inviteModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setInviteModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setInviteModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContainer}>
+                {/* Header */}
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Create User</Text>
+                </View>
+                {/* Form */}
+                <View style={styles.form}>
+                  <TextInput style={styles.input} placeholder="First Name" value={inviteFirstName} onChangeText={setInviteFirstName} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Last Name" value={inviteLastName} onChangeText={setInviteLastName} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Company Name" value={inviteCompanyName} onChangeText={setInviteCompanyName} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Company UID" value={inviteCompanyUID} onChangeText={setInviteCompanyUID} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Cohort" value={inviteCohort} onChangeText={setInviteCohort} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Email" value={inviteEmail} onChangeText={setInviteEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Password" value={invitePassword} onChangeText={setInvitePassword} secureTextEntry placeholderTextColor="#888" />
+                  <View style={{ flexDirection: 'row', marginBottom: 15, width: '100%', justifyContent: 'space-between' }}>
+                    <TouchableOpacity style={[styles.sendButton, { flex: 1, marginRight: 5, backgroundColor: inviteRole === 'Admin' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('Admin')}>
+                      <Text style={[styles.sendButtonText, { color: inviteRole === 'Admin' ? '#fff' : '#666' }]}>Admin</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.sendButton, { flex: 1, marginLeft: 5, backgroundColor: inviteRole === 'User' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('User')}>
+                      <Text style={[styles.sendButtonText, { color: inviteRole === 'User' ? '#fff' : '#666' }]}>User</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {/* Footer Actions */}
+                <View style={styles.modalFooter}>
+                  <TouchableOpacity style={[styles.cancelButton, styles.footerButton]} onPress={() => setInviteModalVisible(false)}>
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.createButton, styles.footerButton]} onPress={handleInviteAdmin}>
+                    <Text style={styles.createText}>Create</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+      {/* User Info Modal */}
+      <Modal
+        visible={userInfoModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setUserInfoModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setUserInfoModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>User Info</Text>
+                  {selectedUser && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEditUserRole(selectedUser.role === 'Admin' ? 'Admin' : 'User');
+                        setEditUserFirstName(selectedUser.firstName);
+                        setEditUserLastName(selectedUser.lastName);
+                        setEditUserCompanyName(selectedUser.companyName);
+                        setEditUserCompanyUID(selectedUser.companyUID);
+                        setEditUserCohort(selectedUser.cohort || '');
+                        setEditUserModalVisible(true);
+                      }}
+                      style={styles.editButton}
+                    >
+                      <Text style={styles.editButtonText}>Edit</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {selectedUser && (
+                  <View>
+                    <Text style={styles.detailText}>Name: {selectedUser.firstName} {selectedUser.lastName}</Text>
+                    <Text style={styles.detailText}>Email: {selectedUser.email}</Text>
+                    <Text style={styles.detailText}>Company: {selectedUser.companyName}</Text>
+                    <Text style={styles.detailText}>Company ID: {selectedUser.companyUID}</Text>
+                    <Text style={styles.detailText}>Role: {selectedUser.role}</Text>
+                    <Text style={styles.detailText}>Cohort: {selectedUser.cohort}</Text>
+                    <Text style={styles.detailText}>Joined: {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+      {/* Edit User Modal */}
+      <Modal
+        visible={editUserModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditUserModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setEditUserModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContainer}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Edit User</Text>
+                  {selectedUser && (
+                    <TouchableOpacity
+                      onPress={async () => {
+                        Alert.alert(
+                          'Delete User',
+                          'Are you sure you want to delete this user?',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            {
+                              text: 'Delete',
+                              style: 'destructive',
+                              onPress: async () => {
+                                await authService.deleteUser(selectedUser.id);
+                                setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+                                setEditUserModalVisible(false);
+                                setUserInfoModalVisible(false);
+                              },
+                            },
+                          ]
+                        );
+                      }}
+                      style={styles.deleteButton}
+                    >
+                      <Trash2 size={22} color="#d32f2f" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {selectedUser && (
+                  <View style={styles.form}>
+                    <TextInput style={styles.input} placeholder="First Name" value={editUserFirstName} onChangeText={setEditUserFirstName} placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Last Name" value={editUserLastName} onChangeText={setEditUserLastName} placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Company Name" value={editUserCompanyName} onChangeText={setEditUserCompanyName} placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Company UID" value={editUserCompanyUID} onChangeText={setEditUserCompanyUID} placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Cohort" value={editUserCohort} onChangeText={setEditUserCohort} placeholderTextColor="#888" />
+                    <Text style={styles.detailText}>Email: {selectedUser.email}</Text>
+                    <View style={{ flexDirection: 'row', marginBottom: 15, width: '100%', justifyContent: 'space-between' }}>
+                      <TouchableOpacity style={[styles.sendButton, { flex: 1, marginRight: 5, backgroundColor: editUserRole === 'Admin' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setEditUserRole('Admin')}>
+                        <Text style={[styles.sendButtonText, { color: editUserRole === 'Admin' ? '#fff' : '#666' }]}>Admin</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.sendButton, { flex: 1, marginLeft: 5, backgroundColor: editUserRole === 'User' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setEditUserRole('User')}>
+                        <Text style={[styles.sendButtonText, { color: editUserRole === 'User' ? '#fff' : '#666' }]}>User</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+                <View style={styles.modalFooter}>
+                  <TouchableOpacity style={[styles.cancelButton, styles.footerButton]} onPress={() => setEditUserModalVisible(false)}>
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.createButton, styles.footerButton]} onPress={async () => {
+                    if (selectedUser) {
+                      await authService.updateUserInfo(selectedUser.id, {
+                        firstName: editUserFirstName,
+                        lastName: editUserLastName,
+                        companyName: editUserCompanyName,
+                        companyUID: editUserCompanyUID,
+                        cohort: editUserCohort,
+                        role: editUserRole,
+                      });
+                      // Update user in list
+                      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, firstName: editUserFirstName, lastName: editUserLastName, companyName: editUserCompanyName, companyUID: editUserCompanyUID, cohort: editUserCohort, role: editUserRole } : u));
+                      setSelectedUser(prev => prev ? { ...prev, firstName: editUserFirstName, lastName: editUserLastName, companyName: editUserCompanyName, companyUID: editUserCompanyUID, cohort: editUserCohort, role: editUserRole } : prev);
+                    }
+                    setEditUserModalVisible(false);
+                  }}>
+                    <Text style={styles.createText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </SafeAreaView>
   );
@@ -665,7 +818,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: '#1a1a1a',
-    marginBottom: 15,
+    marginBottom: 0, // ensure no extra margin
   },
   input: {
     width: '100%',
@@ -781,5 +934,99 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 24,
+    margin: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+    minWidth: 320,
+    maxWidth: 400,
+    width: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  form: {
+    marginBottom: 24,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 12, // for spacing between buttons (if supported)
+  },
+  footerButton: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  removeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  removeText: {
+    color: '#888',
+    marginLeft: 6,
+    fontWeight: '500',
+  },
+  cancelButton: {
+    backgroundColor: '#d32f2f',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 0,
+    borderWidth: 1,
+    borderColor: '#d32f2f',
+    marginRight: 6, // fallback spacing if gap is not supported
+  },
+  cancelButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+  },
+  createButton: {
+    backgroundColor: '#1976d2',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 0,
+    marginLeft: 6, // fallback spacing if gap is not supported
+  },
+  createText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  editButton: {
+    padding: 8,
+    marginLeft: 'auto',
+  },
+  editButtonText: {
+    color: '#1976d2',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  deleteButton: {
+    padding: 8,
+    marginLeft: 8,
+    alignItems: 'center', // ensure vertical alignment
+    justifyContent: 'center',
   },
 });
