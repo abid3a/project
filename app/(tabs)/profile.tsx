@@ -286,6 +286,7 @@ export default function ProfileScreen() {
                   setInvitePassword('');
                   setInviteRole('User'); // default to User
                   setInviteCohort('');
+                  setAdminModalVisible(false); // Close admin modal when opening invite modal
                   setInviteModalVisible(true);
                 }}
               >
@@ -381,39 +382,44 @@ export default function ProfileScreen() {
         <TouchableWithoutFeedback onPress={() => setInviteModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalContainer}>
-                {/* Header */}
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Create User</Text>
-                </View>
-                {/* Form */}
-                <View style={styles.form}>
-                  <TextInput style={styles.input} placeholder="First Name" value={inviteFirstName} onChangeText={setInviteFirstName} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Last Name" value={inviteLastName} onChangeText={setInviteLastName} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Company Name" value={inviteCompanyName} onChangeText={setInviteCompanyName} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Company UID" value={inviteCompanyUID} onChangeText={setInviteCompanyUID} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Cohort" value={inviteCohort} onChangeText={setInviteCohort} placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Email" value={inviteEmail} onChangeText={setInviteEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" placeholderTextColor="#888" />
-                  <TextInput style={styles.input} placeholder="Password" value={invitePassword} onChangeText={setInvitePassword} secureTextEntry placeholderTextColor="#888" />
-                  <View style={{ flexDirection: 'row', marginBottom: 15, width: '100%', justifyContent: 'space-between' }}>
-                    <TouchableOpacity style={[styles.sendButton, { flex: 1, marginRight: 5, backgroundColor: inviteRole === 'Admin' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('Admin')}>
-                      <Text style={[styles.sendButtonText, { color: inviteRole === 'Admin' ? '#fff' : '#666' }]}>Admin</Text>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ width: '100%', alignItems: 'center' }}
+              >
+                <View style={styles.modalContainer}>
+                  {/* Header */}
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Create User</Text>
+                  </View>
+                  {/* Form */}
+                  <View style={styles.form}>
+                    <TextInput style={styles.input} placeholder="First Name" value={inviteFirstName} onChangeText={setInviteFirstName} placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Last Name" value={inviteLastName} onChangeText={setInviteLastName} placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Company Name" value={inviteCompanyName} onChangeText={setInviteCompanyName} placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Company UID" value={inviteCompanyUID} onChangeText={setInviteCompanyUID} placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Cohort" value={inviteCohort} onChangeText={setInviteCohort} placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Email" value={inviteEmail} onChangeText={setInviteEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" placeholderTextColor="#888" />
+                    <TextInput style={styles.input} placeholder="Password" value={invitePassword} onChangeText={setInvitePassword} secureTextEntry placeholderTextColor="#888" />
+                    <View style={{ flexDirection: 'row', marginBottom: 15, width: '100%', justifyContent: 'space-between' }}>
+                      <TouchableOpacity style={[styles.sendButton, { flex: 1, marginRight: 5, backgroundColor: inviteRole === 'Admin' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('Admin')}>
+                        <Text style={[styles.sendButtonText, { color: inviteRole === 'Admin' ? '#fff' : '#666' }]}>Admin</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.sendButton, { flex: 1, marginLeft: 5, backgroundColor: inviteRole === 'User' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('User')}>
+                        <Text style={[styles.sendButtonText, { color: inviteRole === 'User' ? '#fff' : '#666' }]}>User</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  {/* Footer Actions */}
+                  <View style={styles.modalFooter}>
+                    <TouchableOpacity style={[styles.cancelButton, styles.footerButton]} onPress={() => setInviteModalVisible(false)}>
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.sendButton, { flex: 1, marginLeft: 5, backgroundColor: inviteRole === 'User' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('User')}>
-                      <Text style={[styles.sendButtonText, { color: inviteRole === 'User' ? '#fff' : '#666' }]}>User</Text>
+                    <TouchableOpacity style={[styles.createButton, styles.footerButton]} onPress={handleInviteAdmin}>
+                      <Text style={styles.createText}>Create</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
-                {/* Footer Actions */}
-                <View style={styles.modalFooter}>
-                  <TouchableOpacity style={[styles.cancelButton, styles.footerButton]} onPress={() => setInviteModalVisible(false)}>
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.createButton, styles.footerButton]} onPress={handleInviteAdmin}>
-                    <Text style={styles.createText}>Create</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
