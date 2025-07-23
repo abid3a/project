@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { router } from 'expo-router';
 import { authService } from '@/services/authService';
 import { fetchReports } from '@/services/dataService';
-import { ScrollView, Modal, TextInput } from 'react-native';
+import { ScrollView, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -324,40 +324,48 @@ export default function ProfileScreen() {
             />
             {/* Invite Admin Modal Content */}
             {inviteModalVisible && (
-              <View style={styles.inviteModalContent}>
-                <Text style={styles.modalTitle}>Create User</Text>
-                <TextInput style={styles.input} placeholder="First Name" value={inviteFirstName} onChangeText={setInviteFirstName} />
-                <TextInput style={styles.input} placeholder="Last Name" value={inviteLastName} onChangeText={setInviteLastName} />
-                <TextInput style={styles.input} placeholder="Company Name" value={inviteCompanyName} onChangeText={setInviteCompanyName} />
-                <TextInput style={styles.input} placeholder="Company UID" value={inviteCompanyUID} onChangeText={setInviteCompanyUID} />
-                <TextInput style={styles.input} placeholder="Cohort" value={inviteCohort} onChangeText={setInviteCohort} />
-                <TextInput style={styles.input} placeholder="Email" value={inviteEmail} onChangeText={setInviteEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
-                <TextInput style={styles.input} placeholder="Password" value={invitePassword} onChangeText={setInvitePassword} secureTextEntry />
-                <View style={{ flexDirection: 'row', marginBottom: 15, width: '100%', justifyContent: 'space-between' }}>
-                  <TouchableOpacity style={[styles.sendButton, { flex: 1, marginRight: 5, backgroundColor: inviteRole === 'Admin' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('Admin')}>
-                    <Text style={[styles.sendButtonText, { color: inviteRole === 'Admin' ? '#fff' : '#666' }]}>Admin</Text>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+              >
+                <ScrollView
+                  contentContainerStyle={[styles.inviteModalContent, { flexGrow: 1 }]}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  <Text style={styles.modalTitle}>Create User</Text>
+                  <TextInput style={styles.input} placeholder="First Name" value={inviteFirstName} onChangeText={setInviteFirstName} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Last Name" value={inviteLastName} onChangeText={setInviteLastName} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Company Name" value={inviteCompanyName} onChangeText={setInviteCompanyName} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Company UID" value={inviteCompanyUID} onChangeText={setInviteCompanyUID} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Cohort" value={inviteCohort} onChangeText={setInviteCohort} placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Email" value={inviteEmail} onChangeText={setInviteEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" placeholderTextColor="#888" />
+                  <TextInput style={styles.input} placeholder="Password" value={invitePassword} onChangeText={setInvitePassword} secureTextEntry placeholderTextColor="#888" />
+                  <View style={{ flexDirection: 'row', marginBottom: 15, width: '100%', justifyContent: 'space-between' }}>
+                    <TouchableOpacity style={[styles.sendButton, { flex: 1, marginRight: 5, backgroundColor: inviteRole === 'Admin' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('Admin')}>
+                      <Text style={[styles.sendButtonText, { color: inviteRole === 'Admin' ? '#fff' : '#666' }]}>Admin</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.sendButton, { flex: 1, marginLeft: 5, backgroundColor: inviteRole === 'User' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('User')}>
+                      <Text style={[styles.sendButtonText, { color: inviteRole === 'User' ? '#fff' : '#666' }]}>User</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity style={styles.sendButton} onPress={async () => { await handleInviteAdmin(); setInviteModalVisible(false); }}>
+                    <Text style={styles.sendButtonText}>Create</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.sendButton, { flex: 1, marginLeft: 5, backgroundColor: inviteRole === 'User' ? '#1976d2' : '#e0e0e0' }]} onPress={() => setInviteRole('User')}>
-                    <Text style={[styles.sendButtonText, { color: inviteRole === 'User' ? '#fff' : '#666' }]}>User</Text>
+                  <TouchableOpacity style={styles.closeModalButton} onPress={() => {
+                    setInviteFirstName('');
+                    setInviteLastName('');
+                    setInviteCompanyName('');
+                    setInviteCompanyUID('');
+                    setInviteEmail('');
+                    setInvitePassword('');
+                    setInviteRole('Admin');
+                    setInviteCohort('');
+                    setInviteModalVisible(false);
+                  }}>
+                    <Text style={styles.closeButtonText}>Cancel</Text>
                   </TouchableOpacity>
-                </View>
-                <TouchableOpacity style={styles.sendButton} onPress={async () => { await handleInviteAdmin(); setInviteModalVisible(false); }}>
-                  <Text style={styles.sendButtonText}>Create</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.closeModalButton} onPress={() => {
-                  setInviteFirstName('');
-                  setInviteLastName('');
-                  setInviteCompanyName('');
-                  setInviteCompanyUID('');
-                  setInviteEmail('');
-                  setInvitePassword('');
-                  setInviteRole('Admin');
-                  setInviteCohort('');
-                  setInviteModalVisible(false);
-                }}>
-                  <Text style={styles.closeButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
+                </ScrollView>
+              </KeyboardAvoidingView>
             )}
           </SafeAreaView>
         </GestureHandlerRootView>
