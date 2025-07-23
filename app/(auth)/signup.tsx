@@ -61,7 +61,7 @@ export default function SignupScreen() {
         style={styles.container}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 48 }]}>
           <View style={styles.header}>
             <Text style={styles.title}>TBDC Horizon</Text>
             <Text style={styles.subtitle}>Create your account</Text>
@@ -159,6 +159,7 @@ export default function SignupScreen() {
               style={[styles.signupButton, isLoading && styles.disabledButton]}
               onPress={handleSignup}
               disabled={isLoading}
+              testID="create-account-button"
             >
               <Text style={styles.signupButtonText}>
                 {isLoading ? 'Creating account...' : 'Create Account'}
@@ -244,6 +245,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
+    zIndex: 10,
+    minHeight: 44,
   },
   disabledButton: {
     opacity: 0.6,
