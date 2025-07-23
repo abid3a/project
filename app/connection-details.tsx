@@ -287,21 +287,17 @@ export default function ConnectionDetailsScreen() {
                     style={styles.bio}
                     numberOfLines={bioExpanded ? undefined : 2}
                     ellipsizeMode="tail"
-                    onTextLayout={e => {
-                      if (e.nativeEvent.lines.length > 2 && !bioNeedsExpand) setBioNeedsExpand(true);
-                    }}
                   >
                     {connection.bio}
                   </Text>
-                  {bioNeedsExpand && (
-                    <TouchableOpacity onPress={() => setBioExpanded(exp => !exp)} style={{ marginTop: 2, marginBottom: 2 }}>
-                      {bioExpanded ? (
-                        <ChevronUp size={20} color="#1976d2" />
-                      ) : (
-                        <ChevronDown size={20} color="#1976d2" />
-                      )}
-                    </TouchableOpacity>
-                  )}
+                  {/* Always show expand/collapse arrow if bio is present */}
+                  <TouchableOpacity onPress={() => setBioExpanded(exp => !exp)} style={{ marginTop: 2, marginBottom: 2 }}>
+                    {bioExpanded ? (
+                      <ChevronUp size={20} color="#1976d2" />
+                    ) : (
+                      <ChevronDown size={20} color="#1976d2" />
+                    )}
+                  </TouchableOpacity>
                 </View>
               ) : null}
             </View>
