@@ -11,6 +11,7 @@ interface ConnectionCardProps {
   sessionCount?: number | undefined;
   meetingCount?: number;
   fullWidth?: boolean;
+  isAdmin?: boolean;
 }
 
 const typeColors: Record<string, { bg: string; text: string }> = {
@@ -39,7 +40,8 @@ export function ConnectionCard({
   showFavoriteButton = true,
   sessionCount,
   meetingCount,
-  fullWidth = false
+  fullWidth = false,
+  isAdmin = false
 }: ConnectionCardProps) {
   const [pressed, setPressed] = useState(false);
   const typeColor = typeColors[connection.type] || typeColors.Default;
@@ -55,7 +57,7 @@ export function ConnectionCard({
       onPressOut={() => setPressed(false)}
     >
       {/* Heart button positioned absolutely in top right */}
-      {showFavoriteButton && (
+      {showFavoriteButton && !isAdmin && (
         <Pressable
           style={styles.favoriteButton}
           onPress={onToggleFavorite}

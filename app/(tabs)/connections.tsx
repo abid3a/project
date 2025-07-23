@@ -20,7 +20,10 @@ import {
   fetchSessionCountForConnectionAndCohort,
   fetchMeetingCountForConnection,
   getUniqueTypes,
-  filterByType
+  filterByType,
+  fetchSessionsForConnection,
+  fetchSessionsAttendingForConnection,
+  fetchMeetingsForConnection
 } from '@/services/dataService';
 import { Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
@@ -79,11 +82,22 @@ export default function ConnectionsScreen() {
       await Promise.all(
         filteredConnections.map(async (conn) => {
           let sessions = 0;
-          if (user?.cohort) {
-            const r = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
-            sessions = typeof r === 'number' ? r : 0;
+          let meetings = 0;
+          if (user?.role === 'Admin') {
+            // For admins, count all unique sessions (mentor + attendee) and all meetings
+            const mentorSessionIds = await fetchSessionsForConnection(conn.id);
+            const attendeeSessionIds = await fetchSessionsAttendingForConnection(conn.id);
+            const allSessionIds = Array.from(new Set([...mentorSessionIds, ...attendeeSessionIds].map(String)));
+            sessions = allSessionIds.length;
+            const meetingIds = await fetchMeetingsForConnection(conn.id);
+            meetings = meetingIds.length;
+          } else {
+            if (user?.cohort) {
+              const r = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
+              sessions = typeof r === 'number' ? r : 0;
+            }
+            meetings = await fetchMeetingCountForConnection(conn.id);
           }
-          const meetings = await fetchMeetingCountForConnection(conn.id);
           counts[conn.id] = { sessions, meetings };
         })
       );
@@ -189,6 +203,7 @@ export default function ConnectionsScreen() {
                 }
                 onToggleFavorite={() => toggleFavorite(conn.id)}
                 fullWidth={true}
+                isAdmin={user?.role === 'Admin'}
               />
             ))
           )}

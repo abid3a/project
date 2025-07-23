@@ -6,7 +6,7 @@ import { X, Calendar, Clock, MapPin, User } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useConnections } from '@/contexts/ConnectionsContext';
 import { Meeting, Connection } from '@/types';
-import { fetchMeetingAttendees , fetchSessionCountForConnection, fetchMeetingCountForConnection , fetchMeetings } from '@/services/dataService';
+import { fetchMeetingAttendees , fetchSessionCountForConnection, fetchMeetingCountForConnection , fetchMeetings, fetchAllMeetings } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 
@@ -68,8 +68,13 @@ export default function MeetingDetailsScreen() {
 
   useEffect(() => {
     if (meetingId && user) {
-      // Fetch all meetings for the user's company from Supabase
-      fetchMeetings(user.companyUID)
+      let fetchMeetingsPromise;
+      if (user.role === 'Admin') {
+        fetchMeetingsPromise = fetchAllMeetings();
+      } else {
+        fetchMeetingsPromise = fetchMeetings(user.companyUID);
+      }
+      fetchMeetingsPromise
         .then((meetings) => {
           const foundMeeting = (meetings || []).find((m: any) => m.id === meetingId);
           if (foundMeeting) {
@@ -241,6 +246,7 @@ export default function MeetingDetailsScreen() {
                     showFavoriteButton={true}
                     onToggleFavorite={() => toggleFavorite(attendee.id)}
                     fullWidth={true}
+                    isAdmin={user?.role === 'Admin'}
                   />
                 );
               })}

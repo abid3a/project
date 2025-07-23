@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X, Calendar, Clock, MapPin, Users } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { fetchSessions, fetchConnections, fetchSessionMentors, fetchMentorConnections, fetchSessionCountForConnection, fetchMeetingCountForConnection } from '@/services/dataService';
+import { fetchSessions, fetchConnections, fetchSessionMentors, fetchMentorConnections, fetchSessionCountForConnection, fetchMeetingCountForConnection, fetchAllSessions } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Session, Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
@@ -68,10 +68,19 @@ export default function SessionDetailsScreen() {
 
   useEffect(() => {
     const loadSessionAndMentors = async () => {
-      if (!sessionId || !user || !user.cohort) return;
+      if (!sessionId || !user) return;
       try {
-        const normalizedCohort = user.cohort.trim().toLowerCase();
-        const sessions = await fetchSessions(normalizedCohort);
+        let sessions;
+        if (user.role === 'Admin') {
+          sessions = await fetchAllSessions();
+        } else if (user.cohort) {
+          const normalizedCohort = user.cohort.trim().toLowerCase();
+          sessions = await fetchSessions(normalizedCohort);
+        } else {
+          setSession(null);
+          setMentors([]);
+          return;
+        }
         const foundSession = (sessions || []).find((s: any) => s.id === sessionId);
         if (foundSession) {
           const mappedSession = {
@@ -84,7 +93,7 @@ export default function SessionDetailsScreen() {
             location: foundSession.location,
             description: foundSession.description,
             companyUID: foundSession.company_uid,
-            cohort: foundSession.cohort, // <-- Add this line
+            cohort: foundSession.cohort,
           };
           setSession(mappedSession);
           // Fetch mentor IDs from join table, then fetch mentor details
@@ -245,6 +254,7 @@ export default function SessionDetailsScreen() {
                     showFavoriteButton={true}
                     onToggleFavorite={() => toggleFavorite(mentor.id)}
                     fullWidth={true}
+                    isAdmin={user?.role === 'Admin'}
                   />
                 );
               })}

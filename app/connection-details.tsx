@@ -7,7 +7,7 @@ import { SessionCard } from '@/components/SessionCard';
 import { MeetingCard } from '@/components/MeetingCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { fetchNotesForConnection, addNote as addNoteSupabase, editNote as editNoteSupabase, deleteNote as deleteNoteSupabase, fetchMeetingsForConnection, fetchSessionsForConnection, fetchSessions, mapSessionFromSupabase, fetchSessionMentors, fetchMeetingAttendees, fetchSessionsAttendingForConnection } from '@/services/dataService';
+import { fetchNotesForConnection, addNote as addNoteSupabase, editNote as editNoteSupabase, deleteNote as deleteNoteSupabase, fetchMeetingsForConnection, fetchSessionsForConnection, fetchSessions, mapSessionFromSupabase, fetchSessionMentors, fetchMeetingAttendees, fetchSessionsAttendingForConnection, fetchAllSessions, fetchAllMeetings } from '@/services/dataService';
 import { supabase } from '@/services/supabaseClient';
 import { Connection, Session, Meeting, Note } from '@/types';
 import { StatusBar } from 'expo-status-bar';
@@ -57,12 +57,20 @@ export default function ConnectionDetailsScreen() {
           fetchSessionsAttendingForConnection(foundConnection.id) // attendee
         ]).then(async ([mentorSessionIds, attendeeSessionIds]) => {
           const allSessionIds = Array.from(new Set([...mentorSessionIds, ...attendeeSessionIds].map(String)));
-          if (!allSessionIds.length || !user.cohort) {
+          if (!allSessionIds.length) {
             setLinkedSessions([]);
             return;
           }
-          const normalizedCohort = user.cohort.trim().toLowerCase();
-          const allSessions = await fetchSessions(normalizedCohort);
+          let allSessions = [];
+          if (user.role === 'Admin') {
+            allSessions = await fetchAllSessions();
+          } else if (user.cohort) {
+            const normalizedCohort = user.cohort.trim().toLowerCase();
+            allSessions = await fetchSessions(normalizedCohort);
+          } else {
+            setLinkedSessions([]);
+            return;
+          }
           const mapped = (allSessions || []).map(mapSessionFromSupabase);
           const filteredSessions = mapped.filter((s: any) => allSessionIds.includes(String(s.id)));
           // Fetch mentorIds for each session
@@ -82,15 +90,21 @@ export default function ConnectionDetailsScreen() {
               setLinkedMeetings([]);
               return;
             }
-            const { data, error } = await supabase
-              .from('meetings')
-              .select('*')
-              .in('id', allMeetingIds);
-            if (error || !data) {
-              setLinkedMeetings([]);
-              return;
+            let allMeetings = [];
+            if (user.role === 'Admin') {
+              allMeetings = await fetchAllMeetings();
+            } else {
+              const { data, error } = await supabase
+                .from('meetings')
+                .select('*')
+                .in('id', allMeetingIds);
+              if (error || !data) {
+                setLinkedMeetings([]);
+                return;
+              }
+              allMeetings = data;
             }
-            const filteredMeetings = data.filter((m: any) => allMeetingIds.includes(String(m.id)));
+            const filteredMeetings = allMeetings.filter((m: any) => allMeetingIds.includes(String(m.id)));
             // Fetch attendeeIds for each meeting
             const meetingsWithAttendees = await Promise.all(
               filteredMeetings.map(async (meeting: any) => {
