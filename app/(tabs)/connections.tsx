@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Heart, Search } from 'lucide-react-native';
+import { Heart, Search, X } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import FilterBar from '@/components/FilterBar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -145,6 +145,15 @@ export default function ConnectionsScreen() {
               autoCapitalize="none"
               autoCorrect={false}
             />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery("")}
+                style={{ marginLeft: 8 }}
+                accessibilityLabel="Clear search"
+                accessibilityRole="button"
+              >
+                <X size={20} color="#888" />
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 

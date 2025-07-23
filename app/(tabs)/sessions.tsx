@@ -284,6 +284,15 @@ export default function SessionsScreen() {
             autoCapitalize="none"
             autoCorrect={false}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}
+              style={{ marginLeft: 8 }}
+              accessibilityLabel="Clear search"
+              accessibilityRole="button"
+            >
+              <X size={20} color="#888" />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
