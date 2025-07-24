@@ -31,6 +31,7 @@ export default function SessionsScreen() {
   const [selectedMentorId, setSelectedMentorId] = useState<string | null>(null);
   const [showMentorFilter, setShowMentorFilter] = useState(false);
   const [availableMentors, setAvailableMentors] = useState<any[]>([]); // Adjust type as needed
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function SessionsScreen() {
       setSessions([]);
       return;
     }
+    setIsLoadingSessions(true);
     try {
       let data;
       if (user.role === 'Admin') {
@@ -105,6 +107,8 @@ export default function SessionsScreen() {
       setSessions(mapped);
     } catch (error) {
       setSessions([]);
+    } finally {
+      setIsLoadingSessions(false);
     }
   };
 
@@ -192,6 +196,8 @@ export default function SessionsScreen() {
 
   // When computing types for the FilterBar, filter out empty types
   const types = getUniqueTypes(sessions).filter(t => t && t.trim() !== '');
+  
+
 
   // Section sessions
   const today = new Date();
@@ -238,15 +244,36 @@ export default function SessionsScreen() {
         </Text>
       </View>
 
-      <FilterBar
-        types={types}
-        selectedType={selectedType}
-        onTypeSelect={setSelectedType}
-      />
+      {!isLoadingSessions && sessions.length > 0 && (
+        <FilterBar
+          types={types}
+          selectedType={selectedType}
+          onTypeSelect={setSelectedType}
+        />
+      )}
 
       {/* Admin Cohort & Mentor Filter */}
       {user?.role === 'Admin' && (
         <View style={styles.adminFilterContainer}>
+          {/* Filter tags */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+            {selectedCohort && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Cohort: {selectedCohort}</Text>
+                <TouchableOpacity onPress={() => setSelectedCohort(null)} style={styles.filterTagClose}>
+                  <X size={14} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
+            {selectedMentorId && (
+              <View style={styles.filterTag}>
+                <Text style={styles.filterTagText}>Mentor: {getMentorName(selectedMentorId)}</Text>
+                <TouchableOpacity onPress={() => setSelectedMentorId(null)} style={styles.filterTagClose}>
+                  <X size={14} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <TouchableOpacity
               style={styles.cohortFilterButton}
@@ -297,7 +324,12 @@ export default function SessionsScreen() {
       </View>
 
       {/* Sectioned session list */}
-      <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} style={{ backgroundColor: '#f5f7fa' }}>
+      {isLoadingSessions ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading sessions...</Text>
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false} style={{ backgroundColor: '#f5f7fa' }}>
         {pastSessions.length > 0 && (
           <View style={styles.section}>
             <TouchableOpacity style={{flexDirection: 'row', alignItems: 'flex-start', marginHorizontal: 16, marginBottom: 12}} onPress={() => setShowPast(v => !v)}>
@@ -331,7 +363,8 @@ export default function SessionsScreen() {
             ))}
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
+      )}
 
       {/* Cohort Filter Modal */}
       <Modal
@@ -625,5 +658,36 @@ const styles = StyleSheet.create({
   selectedCohortItemText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f7fa',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  filterTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1976d2',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginRight: 8,
+    marginBottom: 4,
+  },
+  filterTagText: {
+    color: '#fff',
+    fontSize: 13,
+    marginRight: 4,
+  },
+  filterTagClose: {
+    marginLeft: 2,
+    padding: 2,
+    borderRadius: 10,
+    backgroundColor: '#1565c0',
   },
 });
