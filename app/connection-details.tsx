@@ -63,8 +63,10 @@ export default function ConnectionDetailsScreen() {
           }
           let allSessions = [];
           if (user.role === 'Admin') {
+            // Admin can see all sessions
             allSessions = await fetchAllSessions();
           } else if (user.cohort) {
+            // Regular users can only see sessions from their cohort
             const normalizedCohort = user.cohort.trim().toLowerCase();
             allSessions = await fetchSessions(normalizedCohort);
           } else {
@@ -92,12 +94,15 @@ export default function ConnectionDetailsScreen() {
             }
             let allMeetings = [];
             if (user.role === 'Admin') {
+              // Admin can see all meetings
               allMeetings = await fetchAllMeetings();
             } else {
+              // Regular users can only see meetings from their company
               const { data, error } = await supabase
                 .from('meetings')
                 .select('*')
-                .in('id', allMeetingIds);
+                .in('id', allMeetingIds)
+                .eq('company_uid', user.companyUID);
               if (error || !data) {
                 setLinkedMeetings([]);
                 return;

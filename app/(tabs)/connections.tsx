@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useConnections } from '@/contexts/ConnectionsContext';
 import {
   fetchSessionCountForConnectionAndCohort,
-  fetchMeetingCountForConnection,
+  fetchMeetingCountForConnectionAndCompany,
   getUniqueTypes,
   filterByType,
   fetchSessionsForConnection,
@@ -96,7 +96,10 @@ export default function ConnectionsScreen() {
               const r = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
               sessions = typeof r === 'number' ? r : 0;
             }
-            meetings = await fetchMeetingCountForConnection(conn.id);
+            if (user?.companyUID) {
+              const r = await fetchMeetingCountForConnectionAndCompany(conn.id, user.companyUID);
+              meetings = typeof r === 'number' ? r : 0;
+            }
           }
           counts[conn.id] = { sessions, meetings };
         })

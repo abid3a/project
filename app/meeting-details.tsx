@@ -6,7 +6,7 @@ import { X, Calendar, Clock, MapPin, User } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useConnections } from '@/contexts/ConnectionsContext';
 import { Meeting, Connection } from '@/types';
-import { fetchMeetingAttendees , fetchSessionCountForConnection, fetchMeetingCountForConnection , fetchMeetings, fetchAllMeetings } from '@/services/dataService';
+import { fetchMeetingAttendees , fetchSessionCountForConnection, fetchMeetingCountForConnection, fetchSessionCountForConnectionAndCohort, fetchMeetingCountForConnectionAndCompany , fetchMeetings, fetchAllMeetings } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { StatusBar } from 'expo-status-bar';
 
@@ -109,10 +109,27 @@ export default function MeetingDetailsScreen() {
     async function fetchCounts() {
       const counts: Record<string, { sessions: number; meetings: number }> = {};
       await Promise.all(attendees.map(async (conn) => {
-        const [sessions, meetings] = await Promise.all([
-          fetchSessionCountForConnection(conn.id),
-          fetchMeetingCountForConnection(conn.id),
-        ]);
+        let sessions = 0;
+        let meetings = 0;
+        
+        if (user?.role === 'Admin') {
+          // For admins, count all sessions and meetings
+          const [sessionCount, meetingCount] = await Promise.all([
+            fetchSessionCountForConnection(conn.id),
+            fetchMeetingCountForConnection(conn.id),
+          ]);
+          sessions = sessionCount;
+          meetings = meetingCount;
+        } else {
+          // For regular users, count only cohort sessions and company meetings
+          if (user?.cohort) {
+            sessions = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
+          }
+          if (user?.companyUID) {
+            meetings = await fetchMeetingCountForConnectionAndCompany(conn.id, user.companyUID);
+          }
+        }
+        
         counts[conn.id] = { sessions, meetings };
       }));
       setAttendeeCounts(counts);
@@ -122,7 +139,7 @@ export default function MeetingDetailsScreen() {
     } else {
       setAttendeeCounts({});
     }
-  }, [attendees]);
+  }, [attendees, user]);
 
   const handleConnectionPress = (connection: Connection) => {
     router.push({

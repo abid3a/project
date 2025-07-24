@@ -319,6 +319,22 @@ export async function fetchSessionCountForConnectionAndCohort(connectionId: stri
   return count;
 }
 
+// Fetch the number of meetings for a given connection and company UID
+export async function fetchMeetingCountForConnectionAndCompany(connectionId: string, companyUID: string) {
+  // 1. Fetch all meetings for the company
+  const meetings = await fetchMeetings(companyUID);
+  if (!meetings || meetings.length === 0) return 0;
+  const companyMeetingIds = meetings.map((m: any) => String(m.id));
+
+  // 2. Fetch all meeting IDs for the connection (as attendee)
+  const connectionMeetingIds = await fetchMeetingsForConnection(connectionId);
+  if (!connectionMeetingIds || connectionMeetingIds.length === 0) return 0;
+
+  // 3. Count intersection
+  const count = connectionMeetingIds.filter((id: string) => companyMeetingIds.includes(String(id))).length;
+  return count;
+}
+
 // Utility: Get unique types from a list of items
 export function getUniqueTypes(items: { type: string }[]): string[] {
   const types = items.map(item => item.type);

@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { X, Calendar, Clock, MapPin, Users } from 'lucide-react-native';
 import { ConnectionCard } from '@/components/ConnectionCard';
 import { useConnections } from '@/contexts/ConnectionsContext';
-import { fetchSessions, fetchConnections, fetchSessionMentors, fetchMentorConnections, fetchSessionCountForConnection, fetchMeetingCountForConnection, fetchAllSessions } from '@/services/dataService';
+import { fetchSessions, fetchConnections, fetchSessionMentors, fetchMentorConnections, fetchSessionCountForConnectionAndCohort, fetchMeetingCountForConnectionAndCompany, fetchSessionCountForConnection, fetchMeetingCountForConnection, fetchAllSessions } from '@/services/dataService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Session, Connection } from '@/types';
 import { StatusBar } from 'expo-status-bar';
@@ -117,10 +117,27 @@ export default function SessionDetailsScreen() {
     async function fetchCounts() {
       const counts: Record<string, { sessions: number; meetings: number }> = {};
       await Promise.all(mentors.map(async (conn) => {
-        const [sessions, meetings] = await Promise.all([
-          fetchSessionCountForConnection(conn.id),
-          fetchMeetingCountForConnection(conn.id),
-        ]);
+        let sessions = 0;
+        let meetings = 0;
+        
+        if (user?.role === 'Admin') {
+          // For admins, count all sessions and meetings
+          const [sessionCount, meetingCount] = await Promise.all([
+            fetchSessionCountForConnection(conn.id),
+            fetchMeetingCountForConnection(conn.id),
+          ]);
+          sessions = sessionCount;
+          meetings = meetingCount;
+        } else {
+          // For regular users, count only cohort sessions and company meetings
+          if (user?.cohort) {
+            sessions = await fetchSessionCountForConnectionAndCohort(conn.id, user.cohort);
+          }
+          if (user?.companyUID) {
+            meetings = await fetchMeetingCountForConnectionAndCompany(conn.id, user.companyUID);
+          }
+        }
+        
         counts[conn.id] = { sessions, meetings };
       }));
       setMentorCounts(counts);
@@ -130,7 +147,7 @@ export default function SessionDetailsScreen() {
     } else {
       setMentorCounts({});
     }
-  }, [mentors]);
+  }, [mentors, user]);
 
   const handleConnectionPress = (connection: Connection) => {
     router.push({
