@@ -1,7 +1,13 @@
+/**
+ * ConnectionCard Component
+ * Displays a connection card with user information, type, and interaction buttons
+ */
+
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { Building, Heart, User, Calendar, Users } from 'lucide-react-native';
 import { Connection } from '@/types';
+import { TYPE_COLORS, BANNER_IMAGES, DEFAULT_IMAGES } from '@/utils/constants';
 
 interface ConnectionCardProps {
   connection: Connection;
@@ -14,37 +20,94 @@ interface ConnectionCardProps {
   isAdmin?: boolean;
 }
 
-const typeColors: Record<string, { bg: string; text: string }> = {
-  Mentor: { bg: '#c8e6c9', text: '#1b5e20' }, // deeper pastel green, stronger text
-  Customer: { bg: '#fff9c4', text: '#f57c00' }, // deeper pastel yellow, stronger text
-  EIR: { bg: '#bbdefb', text: '#0d47a1' }, // deeper pastel blue, stronger text
-  Meeting: { bg: '#e1bee7', text: '#6a1b9a' }, // deeper pastel purple, stronger text
-  Admin: { bg: '#ffccbc', text: '#bf360c' }, // deeper pastel orange, stronger text
-  Default: { bg: '#eeeeee', text: '#424242' },
-};
+/**
+ * Get the appropriate color scheme for a connection type
+ * @param type - Connection type
+ * @returns Color scheme object
+ */
+function getTypeColor(type: string): { bg: string; text: string } {
+  return TYPE_COLORS[type] || TYPE_COLORS.Default;
+}
 
-// Map for local banner images
-const bannerMap: Record<string, any> = {
-  'banners/1.png': require('@/assets/images/banners/1.png'),
-  'banners/2.png': require('@/assets/images/banners/2.png'),
-  'banners/3.png': require('@/assets/images/banners/3.png'),
-  'banners/4.png': require('@/assets/images/banners/4.png'),
-  'banners/5.png': require('@/assets/images/banners/5.png'),
-};
-const defaultAvatar = require('@/assets/images/icon.png');
+/**
+ * Get the appropriate image source for a profile image
+ * @param profileImage - Profile image path or URI
+ * @returns Image source object
+ */
+function getImageSource(profileImage?: string): any {
+  if (!profileImage) {
+    return DEFAULT_IMAGES.avatar;
+  }
 
-export function ConnectionCard({ 
-  connection, 
-  onPress, 
+  // Check if it's a local banner image
+  if (BANNER_IMAGES[profileImage as keyof typeof BANNER_IMAGES]) {
+    return BANNER_IMAGES[profileImage as keyof typeof BANNER_IMAGES];
+  }
+
+  // Check if it's a number (local require)
+  if (typeof profileImage === 'number') {
+    return profileImage;
+  }
+
+  // Return as URI
+  return { uri: profileImage };
+}
+
+/**
+ * Format the role and organization display text
+ * @param role - User role
+ * @param organization - Organization name
+ * @returns Formatted display text
+ */
+function formatRoleAndOrganization(role?: string, organization?: string): string | null {
+  if (role && organization) {
+    return `${role} | ${organization}`;
+  } else if (role) {
+    return role;
+  } else if (organization) {
+    return organization;
+  }
+  return null;
+}
+
+/**
+ * Get the session count display text
+ * @param sessionCount - Number of sessions
+ * @returns Formatted session count text
+ */
+function getSessionCountText(sessionCount?: number): string {
+  const count = typeof sessionCount === 'number' ? sessionCount : 0;
+  return `${count} session${count === 1 ? '' : 's'}`;
+}
+
+/**
+ * Get the meeting count display text
+ * @param meetingCount - Number of meetings
+ * @param linkedMeetingIds - Array of linked meeting IDs
+ * @returns Formatted meeting count text
+ */
+function getMeetingCountText(meetingCount?: number, linkedMeetingIds?: string[]): string {
+  const count = typeof meetingCount === 'number' ? meetingCount : (linkedMeetingIds || []).length;
+  return `${count} meeting${count === 1 ? '' : 's'}`;
+}
+
+export function ConnectionCard({
+  connection,
+  onPress,
   onToggleFavorite,
   showFavoriteButton = true,
   sessionCount,
   meetingCount,
   fullWidth = false,
-  isAdmin = false
+  isAdmin = false,
 }: ConnectionCardProps) {
   const [pressed, setPressed] = useState(false);
-  const typeColor = typeColors[connection.type] || typeColors.Default;
+  const typeColor = getTypeColor(connection.type);
+  const imageSource = getImageSource(connection.profileImage);
+  const roleOrgText = formatRoleAndOrganization(connection.role, connection.organization);
+  const sessionCountText = getSessionCountText(sessionCount);
+  const meetingCountText = getMeetingCountText(meetingCount, connection.linkedMeetingIds);
+
   return (
     <Pressable
       style={({ pressed: isPressed }) => [
@@ -67,24 +130,20 @@ export function ConnectionCard({
         >
           <Heart
             size={22}
-            color={connection.isFavorite ? "#1976d2" : "#bdbdbd"}
-            fill={connection.isFavorite ? "#1976d2" : "none"}
+            color={connection.isFavorite ? '#1976d2' : '#bdbdbd'}
+            fill={connection.isFavorite ? '#1976d2' : 'none'}
             strokeWidth={2}
           />
         </Pressable>
       )}
-      
+
       {/* Header row: avatar and name/role/company */}
       <View style={styles.headerRow}>
         {connection.profileImage ? (
           <Image
-            source={
-              typeof connection.profileImage === 'number'
-                ? connection.profileImage
-                : bannerMap[connection.profileImage] || { uri: connection.profileImage }
-            }
+            source={imageSource}
             style={styles.avatarImg}
-            defaultSource={defaultAvatar}
+            defaultSource={DEFAULT_IMAGES.avatar}
           />
         ) : (
           <View style={styles.avatarFallback}>
@@ -96,35 +155,24 @@ export function ConnectionCard({
             <Text style={styles.name} numberOfLines={1}>
               {connection.firstName} {connection.lastName}
             </Text>
-            <View style={[styles.typeTag, { backgroundColor: typeColor.bg, marginLeft: 8, alignSelf: 'flex-start' }]}> 
+            <View style={[styles.typeTag, { backgroundColor: typeColor.bg, marginLeft: 8, alignSelf: 'flex-start' }]}>
               <Text style={[styles.typeText, { color: '#000' }]}>{connection.type}</Text>
             </View>
           </View>
           {/* Conditional role/company line */}
-          {connection.role && connection.organization ? (
+          {roleOrgText && (
             <Text style={styles.role} numberOfLines={1}>
-              {connection.role} | {connection.organization}
+              {roleOrgText}
             </Text>
-          ) : connection.role ? (
-            <Text style={styles.role} numberOfLines={1}>
-              {connection.role}
-            </Text>
-          ) : connection.organization ? (
-            <Text style={styles.role} numberOfLines={1}>
-              {connection.organization}
-            </Text>
-          ) : null}
+          )}
         </View>
       </View>
+
       {/* Stats row: sessions and meetings */}
       <View style={styles.statsRow}>
-        <Text style={styles.statText}>
-          {typeof sessionCount === 'number' ? sessionCount : 0} session{sessionCount === 1 ? '' : 's'}
-        </Text>
+        <Text style={styles.statText}>{sessionCountText}</Text>
         <Text style={styles.statDivider}>/</Text>
-        <Text style={styles.statText}>
-          {typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length} meeting{(typeof meetingCount === 'number' ? meetingCount : (connection.linkedMeetingIds || []).length) === 1 ? '' : 's'}
-        </Text>
+        <Text style={styles.statText}>{meetingCountText}</Text>
       </View>
     </Pressable>
   );

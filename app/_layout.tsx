@@ -1,4 +1,8 @@
-import { useEffect } from 'react';
+/**
+ * Root Layout Component
+ * Main app layout with navigation stack and context providers
+ */
+
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

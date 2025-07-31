@@ -1,6 +1,9 @@
-// HomeScreen.tsx
+/**
+ * Home Screen
+ * Main dashboard screen showing featured sessions, upcoming sessions, and meetings
+ */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,7 +12,7 @@ import {
   ScrollView,
   useWindowDimensions,
   TouchableOpacity,
-  StatusBar
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,26 +22,17 @@ import { Session, Meeting } from '@/types';
 import { useRouter } from 'expo-router';
 import { SessionCard } from '@/components/SessionCard';
 import { MeetingCard } from '@/components/MeetingCard';
+import { getGreeting, getDateString, isFutureDate, sortByDate } from '@/utils/helpers';
+import { BANNER_IMAGES } from '@/utils/constants';
 
+// Banner images array
 const banners = [
-  require('@/assets/images/banners/1.png'),
-  require('@/assets/images/banners/2.png'),
-  require('@/assets/images/banners/3.png'),
-  require('@/assets/images/banners/4.png'),
-  require('@/assets/images/banners/5.png'),
+  BANNER_IMAGES['banners/1.png'],
+  BANNER_IMAGES['banners/2.png'],
+  BANNER_IMAGES['banners/3.png'],
+  BANNER_IMAGES['banners/4.png'],
+  BANNER_IMAGES['banners/5.png'],
 ];
-
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good Morning';
-  if (hour < 18) return 'Good Afternoon';
-  return 'Good Evening';
-}
-
-function getDateString() {
-  const today = new Date();
-  return today.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
-}
 
 export default function HomeScreen() {
   const [bannerIndex, setBannerIndex] = useState(0);
@@ -50,46 +44,87 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
 
-  // sizing
+  // Sizing calculations
   const CARD_WIDTH = width * 0.8;
   const CARD_MARGIN = 16;
   const SIDE_PADDING = (width - CARD_WIDTH) / 2;
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  /**
+   * Load data for the home screen
+   */
+  const loadData = useCallback(async () => {
     try {
       setIsLoading(true);
-      if (user?.cohort) {
-        const sessions = await fetchSessions(user.cohort);
-        const upcoming = sessions
-          .filter(s => new Date(s.date) > new Date())
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          .slice(0, 5);
-        setFeaturedSessions(upcoming);
-      }
-      if (user?.companyUID) {
-        const meetings = await fetchMeetings(user.companyUID);
-        const upcoming = meetings
-          .filter(m => new Date(m.date) > new Date())
-          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-          .slice(0, 3);
-        setUpcomingMeetings(upcoming);
-      }
+      
+              // Load sessions for user's cohort
+        if (user?.cohort) {
+          const sessions = await fetchSessions(user.cohort);
+          const upcoming = sortByDate(sessions.filter(s => isFutureDate(s.date))).slice(0, 5);
+          setFeaturedSessions(upcoming);
+        }
+        
+        // Load meetings for user's company
+        if (user?.companyUID) {
+          const meetings = await fetchMeetings(user.companyUID);
+          const upcoming = sortByDate(meetings.filter(m => isFutureDate(m.date))).slice(0, 3);
+          setUpcomingMeetings(upcoming);
+        }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.cohort, user?.companyUID]);
 
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  /**
+   * Handle banner scroll to update current index
+   */
   const handleScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const slide = Math.round(offsetX / (CARD_WIDTH + CARD_MARGIN));
     setBannerIndex(slide);
   };
+
+  /**
+   * Render empty state card
+   */
+  const renderEmptyStateCard = (title: string, subtitle: string) => (
+    <View style={[styles.emptyStateCard, { width: CARD_WIDTH, marginRight: CARD_MARGIN }]}>
+      <Ionicons name="calendar-outline" size={48} color="#ccc" />
+      <Text style={styles.emptyStateText}>{title}</Text>
+      <Text style={styles.emptyStateSubtext}>{subtitle}</Text>
+    </View>
+  );
+
+  /**
+   * Render session card
+   */
+  const renderSessionCard = (session: Session) => (
+    <View key={session.id} style={{ width: CARD_WIDTH, marginRight: CARD_MARGIN }}>
+      <SessionCard
+        session={session}
+        onPress={() => router.push({ pathname: '/session-details', params: { sessionId: session.id } })}
+        fullWidth
+      />
+    </View>
+  );
+
+  /**
+   * Render meeting card
+   */
+  const renderMeetingCard = (meeting: Meeting) => (
+    <View key={meeting.id} style={{ width: CARD_WIDTH, marginRight: CARD_MARGIN }}>
+      <MeetingCard
+        meeting={meeting}
+        onPress={() => router.push({ pathname: '/meeting-details', params: { meetingId: meeting.id } })}
+        fullWidth
+      />
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -110,7 +145,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Featured Sessions */}
+        {/* Featured Sessions Banner */}
         <View>
           <View style={styles.bannerHeaderRow}>
             <Text style={styles.sectionTitle}>Featured Sessions</Text>
@@ -163,27 +198,12 @@ export default function HomeScreen() {
           >
             {(featuredSessions.length > 0 ? featuredSessions : [null]).map((session, idx) =>
               session ? (
-                <View
-                  key={session.id}
-                  style={{ width: CARD_WIDTH, marginRight: CARD_MARGIN }}
-                >
-                  <SessionCard
-                    session={session}
-                    onPress={() => router.push({ pathname: '/session-details', params: { sessionId: session.id } })}
-                    fullWidth
-                  />
-                </View>
+                renderSessionCard(session)
               ) : (
-                <View
-                  key="empty-session"
-                  style={[styles.emptyStateCard, { width: CARD_WIDTH, marginRight: CARD_MARGIN }]}
-                >
-                  <Ionicons name="calendar-outline" size={48} color="#ccc" />
-                  <Text style={styles.emptyStateText}>No upcoming sessions</Text>
-                  <Text style={styles.emptyStateSubtext}>
-                    Check back later for new opportunities
-                  </Text>
-                </View>
+                renderEmptyStateCard(
+                  'No upcoming sessions',
+                  'Check back later for new opportunities'
+                )
               )
             )}
           </ScrollView>
@@ -205,27 +225,12 @@ export default function HomeScreen() {
           >
             {(upcomingMeetings.length > 0 ? upcomingMeetings : [null]).map((meeting, idx) =>
               meeting ? (
-                <View
-                  key={meeting.id}
-                  style={{ width: CARD_WIDTH, marginRight: CARD_MARGIN }}
-                >
-                  <MeetingCard
-                    meeting={meeting}
-                    onPress={() => router.push({ pathname: '/meeting-details', params: { meetingId: meeting.id } })}
-                    fullWidth
-                  />
-                </View>
+                renderMeetingCard(meeting)
               ) : (
-                <View
-                  key="empty-meeting"
-                  style={[styles.emptyStateCard, { width: CARD_WIDTH, marginRight: CARD_MARGIN }]}
-                >
-                  <Ionicons name="calendar-outline" size={48} color="#ccc" />
-                  <Text style={styles.emptyStateText}>No upcoming meetings</Text>
-                  <Text style={styles.emptyStateSubtext}>
-                    Schedule your next meeting
-                  </Text>
-                </View>
+                renderEmptyStateCard(
+                  'No upcoming meetings',
+                  'Schedule your next meeting'
+                )
               )
             )}
           </ScrollView>
@@ -242,13 +247,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
+    borderBottomColor: '#f0f0f0',
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginTop: 10
+    marginTop: 10,
   },
   notificationButton: { padding: 8, position: 'relative' },
   notificationBadge: {
@@ -258,7 +263,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF6B6B'
+    backgroundColor: '#FF6B6B',
   },
   greetingSection: { flex: 1 },
   greeting: { fontSize: 28, fontWeight: 'bold', color: '#1a1a1a', marginBottom: 4 },
@@ -270,7 +275,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     marginTop: 24,
-    marginBottom: 8
+    marginBottom: 8,
   },
 
   section: { marginTop: 24 },
@@ -278,7 +283,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
-    paddingHorizontal: 20
+    paddingHorizontal: 20,
   },
 
   sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#1a1a1a' },
@@ -290,7 +295,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 3
+    elevation: 3,
   },
   slideshowOverlay: { position: 'absolute', top: 12, left: 12 },
   typeTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
@@ -302,7 +307,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
-    // no marginRight here
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -310,8 +314,8 @@ const styles = StyleSheet.create({
     elevation: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 120
+    minHeight: 120,
   },
   emptyStateText: { fontSize: 16, color: '#666', marginTop: 12, fontWeight: '500', textAlign: 'center' },
-  emptyStateSubtext: { fontSize: 14, color: '#999', marginTop: 4, textAlign: 'center' }
+  emptyStateSubtext: { fontSize: 14, color: '#999', marginTop: 4, textAlign: 'center' },
 });
