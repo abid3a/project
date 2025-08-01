@@ -22,6 +22,7 @@ import { Session, Meeting } from '@/types';
 import { useRouter } from 'expo-router';
 import { SessionCard } from '@/components/SessionCard';
 import { MeetingCard } from '@/components/MeetingCard';
+import { BannerImage } from '@/components/BannerImage';
 import { getGreeting, getDateString, isFutureDate, sortByDate } from '@/utils/helpers';
 import { BANNER_IMAGES } from '@/utils/constants';
 
@@ -146,7 +147,7 @@ export default function HomeScreen() {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Featured Sessions Banner */}
-        <View>
+        <View style={styles.bannerSection}>
           <View style={styles.bannerHeaderRow}>
             <Text style={styles.sectionTitle}>Featured Sessions</Text>
           </View>
@@ -160,13 +161,17 @@ export default function HomeScreen() {
             onScroll={handleScroll}
             scrollEventThrottle={16}
             contentContainerStyle={{ paddingHorizontal: SIDE_PADDING }}
+            style={styles.bannerScrollView}
           >
             {banners.map((banner, idx) => (
               <View
                 key={idx}
-                style={[styles.slideshowCard, { width: CARD_WIDTH, height: 240, marginRight: CARD_MARGIN }]}
+                style={[styles.slideshowCard, { width: CARD_WIDTH, marginRight: CARD_MARGIN }]}
               >
-                <Image source={banner} style={{ flex: 1, borderRadius: 16 }} resizeMode="cover" />
+                <BannerImage 
+                  source={banner} 
+                  resizeMode="cover"
+                />
                 <View style={styles.slideshowOverlay}>
                   <View style={[styles.typeTag, { backgroundColor: '#4ECDC4' }]}>
                     <Text style={styles.typeTagText}>Mentorship</Text>
@@ -198,12 +203,16 @@ export default function HomeScreen() {
           >
             {(featuredSessions.length > 0 ? featuredSessions : [null]).map((session, idx) =>
               session ? (
-                renderSessionCard(session)
+                <View key={`session-${session.id}`}>
+                  {renderSessionCard(session)}
+                </View>
               ) : (
-                renderEmptyStateCard(
-                  'No upcoming sessions',
-                  'Check back later for new opportunities'
-                )
+                <View key={`empty-session-${idx}`}>
+                  {renderEmptyStateCard(
+                    'No upcoming sessions',
+                    'Check back later for new opportunities'
+                  )}
+                </View>
               )
             )}
           </ScrollView>
@@ -225,12 +234,16 @@ export default function HomeScreen() {
           >
             {(upcomingMeetings.length > 0 ? upcomingMeetings : [null]).map((meeting, idx) =>
               meeting ? (
-                renderMeetingCard(meeting)
+                <View key={`meeting-${meeting.id}`}>
+                  {renderMeetingCard(meeting)}
+                </View>
               ) : (
-                renderEmptyStateCard(
-                  'No upcoming meetings',
-                  'Schedule your next meeting'
-                )
+                <View key={`empty-meeting-${idx}`}>
+                  {renderEmptyStateCard(
+                    'No upcoming meetings',
+                    'Schedule your next meeting'
+                  )}
+                </View>
               )
             )}
           </ScrollView>
@@ -270,11 +283,17 @@ const styles = StyleSheet.create({
   dateText: { fontSize: 16, color: '#666' },
   scrollView: { flex: 1 },
 
+  bannerSection: {
+    marginBottom: 16,
+  },
   bannerHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     marginTop: 24,
+    marginBottom: 8,
+  },
+  bannerScrollView: {
     marginBottom: 8,
   },
 
@@ -296,7 +315,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
+    height: 250,
   },
+
   slideshowOverlay: { position: 'absolute', top: 12, left: 12 },
   typeTag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   typeTagText: { color: '#fff', fontSize: 12, fontWeight: '600' },
