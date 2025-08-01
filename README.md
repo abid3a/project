@@ -287,10 +287,6 @@ expo build:ios
 6. Push to the branch: `git push origin feature-name`
 7. Submit a pull request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
 ## 🆘 Support
 
 For support and questions:
