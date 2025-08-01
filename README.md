@@ -1,6 +1,6 @@
-# TBDC Horizon - React Native App
+# TBDC Horizon - React Native App (UI Branch)
 
-A comprehensive React Native application built with Expo for managing connections, sessions, and meetings in a mentorship platform.
+A comprehensive React Native application built with Expo for managing connections, sessions, and meetings in a mentorship platform. 
 
 ## 🚀 Features
 
